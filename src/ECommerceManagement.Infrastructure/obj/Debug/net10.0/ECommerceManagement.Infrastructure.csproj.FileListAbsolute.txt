@@ -1,0 +1,17 @@
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/bin/Debug/net10.0/ECommerceManagement.Infrastructure.deps.json
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/bin/Debug/net10.0/ECommerceManagement.Infrastructure.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/bin/Debug/net10.0/ECommerceManagement.Infrastructure.pdb
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/bin/Debug/net10.0/ECommerceManagement.Application.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/bin/Debug/net10.0/ECommerceManagement.Domain.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/bin/Debug/net10.0/ECommerceManagement.Application.pdb
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/bin/Debug/net10.0/ECommerceManagement.Domain.pdb
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ECommerceManagement.Infrastructure.csproj.AssemblyReference.cache
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ECommerceManagement.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ECommerceManagement.Infrastructure.AssemblyInfoInputs.cache
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ECommerceManagement.Infrastructure.AssemblyInfo.cs
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ECommerceManagement.Infrastructure.csproj.CoreCompileInputs.cache
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ECommerc.2A70BDE4.Up2Date
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ECommerceManagement.Infrastructure.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/refint/ECommerceManagement.Infrastructure.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ECommerceManagement.Infrastructure.pdb
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ref/ECommerceManagement.Infrastructure.dll

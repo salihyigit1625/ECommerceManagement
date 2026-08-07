@@ -1,0 +1,11 @@
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/bin/Debug/net10.0/ECommerceManagement.Domain.deps.json
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/bin/Debug/net10.0/ECommerceManagement.Domain.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/bin/Debug/net10.0/ECommerceManagement.Domain.pdb
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ECommerceManagement.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ECommerceManagement.Domain.AssemblyInfoInputs.cache
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ECommerceManagement.Domain.AssemblyInfo.cs
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ECommerceManagement.Domain.csproj.CoreCompileInputs.cache
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ECommerceManagement.Domain.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/refint/ECommerceManagement.Domain.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ECommerceManagement.Domain.pdb
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ref/ECommerceManagement.Domain.dll
