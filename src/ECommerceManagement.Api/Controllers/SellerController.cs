@@ -22,8 +22,8 @@ public class SellerController : ControllerBase
     // 1. ÜRÜN VE STOK YÖNETİMİ
     // ==========================================
 
-    [HttpGet("{sellerId}/products")]
-    public async Task<IActionResult> GetMyProducts(int sellerId)
+    [HttpGet("products")]
+    public async Task<IActionResult> GetMyProducts([FromQuery] int sellerId)
     {
         var products = await _productService.GetProductsBySellerIdAsync(sellerId);
         return Ok(products); // HTTP 200 döner
@@ -43,8 +43,8 @@ public class SellerController : ControllerBase
         return Ok(new { Message = "Ürün başarıyla güncellendi." });
     }
 
-    [HttpDelete("products/{id}")]
-    public async Task<IActionResult> DeleteProduct(int id)
+    [HttpDelete("products")]
+    public async Task<IActionResult> DeleteProduct([FromQuery]int id)
     {
         await _productService.DeleteAsync(id);
         return Ok(new { Message = "Ürün başarıyla silindi (pasife çekildi)." });
@@ -54,31 +54,46 @@ public class SellerController : ControllerBase
     // 2. SİPARİŞ VE FATURA YÖNETİMİ
     // ==========================================
 
-    [HttpGet("{sellerId}/orders/pending")]
-    public async Task<IActionResult> GetPendingOrders(int sellerId)
+    [HttpGet("/orders/pending")]
+    public async Task<IActionResult> GetPendingOrders([FromQuery]int sellerId)
     {
         var orders = await _sellerOrderService.GetPendingOrdersAsync(sellerId);
         return Ok(orders);
     }
 
-    [HttpPost("{sellerId}/orders/{orderId}/invoice")]
-    public async Task<IActionResult> CreateInvoiceDraft(int sellerId, int orderId)
+    [HttpPost("/orders/invoice")]
+    public async Task<IActionResult> CreateInvoiceDraft([FromQuery]int sellerId,[FromQuery] int orderId)
     {
         var invoice = await _sellerOrderService.CreateInvoiceDraftAsync(orderId, sellerId);
         return Ok(invoice); // Oluşturulan fatura taslağını geri döner
     }
 
-    [HttpPut("{sellerId}/invoices/{invoiceId}/confirm")]
-    public async Task<IActionResult> ConfirmInvoice(int sellerId, int invoiceId)
+    [HttpPut("/invoices/confirm")]
+    public async Task<IActionResult> ConfirmInvoice([FromQuery]int sellerId, [FromQuery]int invoiceId)
     {
         await _sellerOrderService.ConfirmInvoiceAndOrderAsync(invoiceId, sellerId);
         return Ok(new { Message = "Fatura onaylandı. Sipariş 'Invoiced' durumuna geçti." });
     }
 
-    [HttpPut("{sellerId}/orders/{orderId}/ship")]
-    public async Task<IActionResult> ShipOrder(int sellerId, int orderId)
+    [HttpPut("/orders/ship")]
+    public async Task<IActionResult> ShipOrder([FromQuery]int sellerId, [FromQuery]int orderId)
     {
         await _sellerOrderService.ShipOrderAsync(orderId, sellerId);
         return Ok(new { Message = "Sipariş kargoya verildi. Durum: 'Shipped'." });
     }
+    
+    [HttpGet("/orders/all")]
+    public async Task<IActionResult> GetAllOrders([FromQuery]int sellerId)
+    {
+        var orders = await _sellerOrderService.GetAllOrdersBySellerIdAsync(sellerId);
+        return Ok(orders);
+    }
+
+    [HttpGet("/invoices")]
+    public async Task<IActionResult> GetInvoices([FromQuery]int sellerId)
+    {
+        var invoices = await _sellerOrderService.GetInvoicesBySellerIdAsync(sellerId);
+        return Ok(invoices);
+    }
+    
 }

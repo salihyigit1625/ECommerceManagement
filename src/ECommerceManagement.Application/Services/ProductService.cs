@@ -15,20 +15,27 @@ public class ProductService : IProductService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<IEnumerable<ProductDto>> GetProductsBySellerIdAsync(int sellerId)
+    public async Task<IEnumerable<SellerProductDto>> GetProductsBySellerIdAsync(int sellerId)
     {
-        var allProducts = await _productRepository.GetAllAsync();
-        
-        return allProducts
-            .Where(p => p.SellerId == sellerId && p.IsActive)
-            .Select(p => new ProductDto
+        var products = await _productRepository.GetAllAsync(
+            p => p.Category, 
+            p => p.Seller, 
+            p => p.Warehouse
+        );
+
+        return products
+            .Where(p => p.SellerId == sellerId)
+            .Select(p => new SellerProductDto
             {
                 Id = p.Id,
-                SellerId = p.SellerId,
                 Name = p.Name,
                 Sku = p.Sku,
                 Price = p.Price,
-                Quantity = p.Quantity
+                Quantity = p.Quantity,
+                SellerId = p.SellerId,
+                CategoryName = p.Category?.Name ?? string.Empty,
+                WarehouseName = p.Warehouse?.Name ?? string.Empty,
+                IsActive = p.IsActive
             });
     }
 
@@ -76,7 +83,7 @@ public class ProductService : IProductService
     public async Task UpdateAsync(UpdateProductDto dto)
     {
         var product = await _productRepository.GetByIdAsync(dto.Id);
-        if (product == null || !product.IsActive)
+        if (product == null)
             throw new KeyNotFoundException("Güncellenecek ürün bulunamadı.");
 
         if (dto.Price <= 0)

@@ -15,8 +15,8 @@ public class CustomerOrderController : ControllerBase
         _customerOrderService = customerOrderService;
     }
 
-    [HttpGet("{customerId}/orders")]
-    public async Task<IActionResult> GetMyOrders(int customerId)
+    [HttpGet("orders")]
+    public async Task<IActionResult> GetMyOrders([FromQuery] int customerId)
     {
         var orders = await _customerOrderService.GetMyOrdersAsync(customerId);
         return Ok(orders);
@@ -31,11 +31,11 @@ public class CustomerOrderController : ControllerBase
         return Ok(new { Message = "Siparişler başarıyla oluşturuldu." });
     }
 
-    [HttpPut("{customerId}/orders/{orderId}/cancel")]
-    public async Task<IActionResult> CancelOrder(int customerId, int orderId)
+    [HttpPut("cancel")]
+    public async Task<IActionResult> CancelOrder([FromBody] CancelOrderDto dto)
     {
         // Sadece "Pending" durumundaki siparişler iptal edilebilir
-        await _customerOrderService.CancelMyOrderAsync(orderId, customerId);
+        await _customerOrderService.CancelMyOrderAsync(dto.OrderId, dto.CustomerId);
         
         return Ok(new { Message = "Sipariş başarıyla iptal edildi." });
     }

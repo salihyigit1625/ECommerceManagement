@@ -15,9 +15,9 @@ public class Product : BaseEntity
     public bool IsActive { get; set; } = true;
     public DateTime? UpdatedAt { get; set; }
 
-    public Seller Seller { get; set; } = null!;
-    public Category Category { get; set; } = null!;
-    public Warehouse Warehouse { get; set; } = null!;
+    public Seller? Seller { get; set; } = null!;
+    public Category? Category { get; set; } = null!;
+    public Warehouse? Warehouse { get; set; } = null!;
     
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     public ICollection<ProductMovement> Movements { get; set; } = new List<ProductMovement>();

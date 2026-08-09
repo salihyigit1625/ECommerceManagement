@@ -31,18 +31,37 @@ public class SellerOrderService : ISellerOrderService
     // 1. Satıcı sadece kendisine gelen Pending siparişleri listeler
     public async Task<IEnumerable<OrderDto>> GetPendingOrdersAsync(int sellerId)
     {
-        var allOrders = await _orderRepository.GetAllAsync();
-        
-        return allOrders
+        // 1. Siparişleri, müşteriyi ve sipariş kalemlerini Include ile çekiyoruz
+        var orders = await _orderRepository.GetAllAsync(
+            o => o.Customer, 
+            o => o.OrderItems
+        );
+
+        // 2. Ürün adlarını eşleştirmek için ürünleri sözlüğe (Dictionary) alıyoruz
+        var products = await _productRepository.GetAllAsync();
+        var productDict = products.ToDictionary(p => p.Id, p => p.Name);
+
+        return orders
             .Where(o => o.SellerId == sellerId && o.Status == OrderStatus.Pending)
             .Select(o => new OrderDto
             {
                 Id = o.Id,
                 CustomerId = o.CustomerId,
+                // Müşteri ad soyad bilgisini dolduruyoruz
+                CustomerFullName = o.Customer != null ? $"{o.Customer.FirstName} {o.Customer.LastName}" : string.Empty,
                 SellerId = o.SellerId,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status,
-                CreatedAt = o.CreatedAt
+                CreatedAt = o.CreatedAt,
+                // Sipariş kalemlerini ve ürün adlarını dolduruyoruz
+                Items = o.OrderItems.Select(item => new OrderItemDto
+                {
+                    ProductId = item.ProductId,
+                    ProductName = productDict.TryGetValue(item.ProductId, out var prodName) ? prodName : string.Empty,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    LineTotal = item.LineTotal
+                }).ToList()
             });
     }
 
@@ -154,4 +173,58 @@ public class SellerOrderService : ISellerOrderService
 
         await _unitOfWork.SaveChangesAsync();
     }
+    
+    // Satıcının TÜM siparişlerini durum fark etmeksizin getirir
+    public async Task<IEnumerable<OrderDto>> GetAllOrdersBySellerIdAsync(int sellerId)
+    {
+        var orders = await _orderRepository.GetAllAsync(
+            o => o.Customer, 
+            o => o.OrderItems
+        );
+
+        var products = await _productRepository.GetAllAsync();
+        var productDict = products.ToDictionary(p => p.Id, p => p.Name);
+
+        return orders
+            .Where(o => o.SellerId == sellerId) // Status filtresi yok, hepsi geliyor!
+            .Select(o => new OrderDto
+            {
+                Id = o.Id,
+                CustomerId = o.CustomerId,
+                CustomerFullName = o.Customer != null ? $"{o.Customer.FirstName} {o.Customer.LastName}" : string.Empty,
+                SellerId = o.SellerId,
+                TotalAmount = o.TotalAmount,
+                Status = o.Status,
+                CreatedAt = o.CreatedAt,
+                Items = o.OrderItems.Select(item => new OrderItemDto
+                {
+                    ProductId = item.ProductId,
+                    ProductName = productDict.TryGetValue(item.ProductId, out var prodName) ? prodName : string.Empty,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.UnitPrice,
+                    LineTotal = item.LineTotal
+                }).ToList()
+            });
+    }
+
+    // Satıcının kestiği tüm faturaları getirir
+    public async Task<IEnumerable<InvoiceDto>> GetInvoicesBySellerIdAsync(int sellerId)
+    {
+        var invoices = await _invoiceRepository.GetAllAsync();
+
+        return invoices
+            .Where(i => i.SellerId == sellerId)
+            .Select(i => new InvoiceDto
+            {
+                Id = i.Id,
+                OrderId = i.OrderId,
+                InvoiceNumber = i.InvoiceNumber,
+                CustomerName = i.CustomerName,
+                TotalAmount = i.TotalAmount,
+                Status = i.Status,
+                AxIntegrationStatus = i.AxIntegrationStatus,
+                CreatedAt = i.CreatedAt
+            });
+    }
+    
 }

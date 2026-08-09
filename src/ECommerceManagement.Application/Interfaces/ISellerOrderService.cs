@@ -10,4 +10,7 @@ public interface ISellerOrderService
     Task ConfirmInvoiceAndOrderAsync(int invoiceId, int sellerId);
     Task ShipOrderAsync(int orderId, int sellerId);
     Task CancelOrderAsync(int orderId, int sellerId);
+    
+    Task<IEnumerable<OrderDto>> GetAllOrdersBySellerIdAsync(int sellerId);
+    Task<IEnumerable<InvoiceDto>> GetInvoicesBySellerIdAsync(int sellerId);
 }

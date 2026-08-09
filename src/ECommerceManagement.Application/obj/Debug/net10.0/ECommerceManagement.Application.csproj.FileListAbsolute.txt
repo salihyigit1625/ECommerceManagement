@@ -8,9 +8,9 @@
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/ECommerceManagement.Application.AssemblyInfoInputs.cache
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/ECommerceManagement.Application.AssemblyInfo.cs
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/ECommerceManagement.Application.csproj.CoreCompileInputs.cache
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/ECommerceManagement.Application.sourcelink.json
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/ECommerc.927D31F2.Up2Date
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/ECommerceManagement.Application.dll
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/refint/ECommerceManagement.Application.dll
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/ECommerceManagement.Application.pdb
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/ref/ECommerceManagement.Application.dll
-/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/obj/Debug/net10.0/ECommerceManagement.Application.sourcelink.json

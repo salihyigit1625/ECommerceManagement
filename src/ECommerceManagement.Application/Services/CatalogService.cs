@@ -15,19 +15,26 @@ public class CatalogService : ICatalogService
 
     public async Task<IEnumerable<ProductDto>> GetActiveProductsAsync()
     {
-        var products = await _productRepository.GetAllAsync();
-        
-        // Müşteriye sadece aktif ve stoğu 0'dan büyük olan ürünleri listeliyoruz
+        // İlişkili tablolardan verileri Include ile çekiyoruz
+        var products = await _productRepository.GetAllAsync(
+            p => p.Category, 
+            p => p.Seller, 
+            p => p.Warehouse
+        );
+
         return products
             .Where(p => p.IsActive && p.Quantity > 0)
             .Select(p => new ProductDto
             {
                 Id = p.Id,
-                SellerId = p.SellerId,
                 Name = p.Name,
                 Sku = p.Sku,
                 Price = p.Price,
-                Quantity = p.Quantity
+                Quantity = p.Quantity,
+                SellerId = p.SellerId,
+                CompanyName = p.Seller != null ? p.Seller.CompanyName : string.Empty,
+                CategoryName = p.Category != null ? p.Category.Name : string.Empty,
+                WarehouseName = p.Warehouse != null ? p.Warehouse.Name : string.Empty
             });
     }
 }

@@ -63,6 +63,20 @@ namespace ECommerceManagement.Repository.Migrations
                     b.HasIndex("CustomerId");
 
                     b.ToTable("Addresses");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            City = "Bursa",
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CustomerId = 1,
+                            District = "Nilüfer",
+                            FullAddress = "Ata Bulvarı No:1",
+                            IsBilling = true,
+                            IsShipping = true,
+                            Title = "Ev Adresi"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.Category", b =>
@@ -88,6 +102,14 @@ namespace ECommerceManagement.Repository.Migrations
                     b.HasIndex("ParentCategoryId");
 
                     b.ToTable("Categories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Bilgisayar Bileşenleri"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.Customer", b =>
@@ -121,6 +143,17 @@ namespace ECommerceManagement.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("Customers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FirstName = "Mehmet",
+                            LastName = "Yılmaz",
+                            Phone = "5551234567",
+                            UserId = 2
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.Invoice", b =>
@@ -494,6 +527,17 @@ namespace ECommerceManagement.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("Sellers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CompanyName = "Ahmet Teknoloji",
+                            ContactEmail = "iletisim@ahmet.com",
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaxNumber = "123456789",
+                            UserId = 1
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.User", b =>
@@ -534,6 +578,26 @@ namespace ECommerceManagement.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "ahmet@test.com",
+                            IsActive = true,
+                            PasswordHash = "dummy_hash",
+                            Username = "satici_ahmet"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "mehmet@test.com",
+                            IsActive = true,
+                            PasswordHash = "dummy_hash",
+                            Username = "musteri_mehmet"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.UserPermission", b =>
@@ -593,6 +657,16 @@ namespace ECommerceManagement.Repository.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Warehouses");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Location = "Kocaeli",
+                            Name = "Gebze Ana Depo"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.Address", b =>

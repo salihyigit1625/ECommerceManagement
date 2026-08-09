@@ -118,5 +118,41 @@ public class ECommerceDbContext : DbContext
         {
             property.SetColumnType("decimal(18,2)");
         }
+        
+        // ==========================================
+        // SEED DATA (Başlangıç Test Verileri)
+        // ==========================================
+    
+        // Not: HasData içinde DateTime.UtcNow kullanmak yerine sabit bir tarih vermek daha sağlıklıdır, 
+        // aksi halde EF Core her migration'da tarih değiştiği için kayıtları güncellemeye çalışır.
+        var seedDate = new DateTime(2026, 8, 9, 0, 0, 0, DateTimeKind.Utc);
+
+        modelBuilder.Entity<User>().HasData(
+            new User { Id = 1, Username = "satici_ahmet", Email = "ahmet@test.com", PasswordHash = "dummy_hash", IsActive = true, CreatedAt = seedDate },
+            new User { Id = 2, Username = "musteri_mehmet", Email = "mehmet@test.com", PasswordHash = "dummy_hash", IsActive = true, CreatedAt = seedDate }
+        );
+
+        modelBuilder.Entity<Seller>().HasData(
+            new Seller { Id = 1, UserId = 1, CompanyName = "Ahmet Teknoloji", TaxNumber = "123456789", ContactEmail = "iletisim@ahmet.com", CreatedAt = seedDate }
+        );
+
+        modelBuilder.Entity<Customer>().HasData(
+            new Customer { Id = 1, UserId = 2, FirstName = "Mehmet", LastName = "Yılmaz", Phone = "5551234567", CreatedAt = seedDate }
+        );
+
+        modelBuilder.Entity<Category>().HasData(
+            new Category { Id = 1, Name = "Bilgisayar Bileşenleri", CreatedAt = seedDate }
+        );
+
+        // Warehouse'da SellerId YOK, düz platform deposu
+        modelBuilder.Entity<Warehouse>().HasData(
+            new Warehouse { Id = 1, Name = "Gebze Ana Depo", Location = "Kocaeli", IsActive = true, CreatedAt = seedDate }
+        );
+
+        modelBuilder.Entity<Address>().HasData(
+            new Address { Id = 1, CustomerId = 1, Title = "Ev Adresi", City = "Bursa", District = "Nilüfer", FullAddress = "Ata Bulvarı No:1", IsBilling = true, IsShipping = true, CreatedAt = seedDate }
+        );
+        
+        
     }
 }

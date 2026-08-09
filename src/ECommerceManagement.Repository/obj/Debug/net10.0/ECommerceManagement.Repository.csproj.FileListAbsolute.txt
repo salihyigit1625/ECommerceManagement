@@ -11,10 +11,10 @@
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ECommerceManagement.Repository.AssemblyInfoInputs.cache
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ECommerceManagement.Repository.AssemblyInfo.cs
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ECommerceManagement.Repository.csproj.CoreCompileInputs.cache
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ECommerceManagement.Repository.sourcelink.json
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ECommerc.B87BD7AD.Up2Date
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ECommerceManagement.Repository.dll
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/refint/ECommerceManagement.Repository.dll
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ECommerceManagement.Repository.pdb
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ECommerceManagement.Repository.genruntimeconfig.cache
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ref/ECommerceManagement.Repository.dll
-/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/obj/Debug/net10.0/ECommerceManagement.Repository.sourcelink.json
