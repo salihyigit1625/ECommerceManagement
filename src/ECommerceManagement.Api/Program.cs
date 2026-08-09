@@ -1,4 +1,5 @@
 using ECommerceManagement.Application.Interfaces;
+using ECommerceManagement.Application.Services;
 using ECommerceManagement.Repository.Context;
 using ECommerceManagement.Repository.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 // ==========================================
-// 1. SERVİS KAYITLARI (Build edilmeden ÖNCE)
+// 1. SERVİS KAYITLARI
 // ==========================================
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -20,6 +21,12 @@ builder.Services.AddDbContext<ECommerceDbContext>(options =>
 // Repository ve UnitOfWork Kayıtları
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+// Servis Kayıtları
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ISellerOrderService, SellerOrderService>();
+builder.Services.AddScoped<ICatalogService, CatalogService>();
+builder.Services.AddScoped<ICustomerOrderService, CustomerOrderService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 // ==========================================
 // 2. UYGULAMANIN İNŞASI (BUILD)
