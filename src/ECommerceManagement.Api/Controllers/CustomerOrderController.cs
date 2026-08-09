@@ -1,9 +1,12 @@
+using ECommerceManagement.Application.Constants;
 using ECommerceManagement.Application.DTOs.Orders;
 using ECommerceManagement.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceManagement.Api.Controllers;
 
+[Authorize(Roles = Roles.Customer)]
 [ApiController]
 [Route("api/[controller]")]
 public class CustomerOrderController : ControllerBase

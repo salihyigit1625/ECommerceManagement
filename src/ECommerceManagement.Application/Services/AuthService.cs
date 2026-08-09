@@ -1,3 +1,4 @@
+using ECommerceManagement.Application.Constants;
 using ECommerceManagement.Application.DTOs.Auth;
 using ECommerceManagement.Application.Interfaces;
 using ECommerceManagement.Domain.Entities;
@@ -28,74 +29,66 @@ public class AuthService : IAuthService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<TokenResponseDto> RegisterAsync(RegisterDto dto)
+    // ==========================================
+    // 1. MÜŞTERİ KAYIT (Sadece Müşteri Bilgileri)
+    // ==========================================
+    public async Task<TokenResponseDto> RegisterCustomerAsync(CustomerRegisterDto dto)
     {
-        // 1. Email kontrolü
         var existingUsers = await _userRepository.GetAllAsync();
         if (existingUsers.Any(u => u.Email == dto.Email))
             throw new InvalidOperationException("Bu e-posta adresi ile zaten bir kayıt mevcut.");
 
-        // 2. Yeni User nesnesi oluşturma
-        var user = new User
-        {
-            Username = dto.Username,
-            Email = dto.Email,
-            CreatedAt = DateTime.UtcNow,
-            IsActive = true
-        };
-
+        var user = new User { Username = dto.Username, Email = dto.Email, CreatedAt = DateTime.UtcNow, IsActive = true };
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
 
         await _userRepository.AddAsync(user);
-        await _unitOfWork.SaveChangesAsync(); // User ID oluşması için kaydediyoruz
+        await _unitOfWork.SaveChangesAsync(); 
 
-        // 3. UserType'a göre Profil (Customer veya Seller) oluşturma
-        if (dto.UserType.Equals("Seller", StringComparison.OrdinalIgnoreCase))
+        var customer = new Customer
         {
-            var seller = new Seller
-            {
-                UserId = user.Id,
-                CompanyName = dto.CompanyName ?? "Şirket Adı Belirtilmedi",
-                TaxNumber = dto.TaxNumber ?? $"TAX-{Guid.NewGuid().ToString().Substring(0, 8)}",
-                ContactEmail = dto.Email,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _sellerRepository.AddAsync(seller);
-        }
-        else
-        {
-            var customer = new Customer
-            {
-                UserId = user.Id,
-                FirstName = dto.FirstName ?? "İsimsiz",
-                LastName = dto.LastName ?? "Müşteri",
-                CreatedAt = DateTime.UtcNow
-            };
-            await _customerRepository.AddAsync(customer);
-        }
-
-        await _unitOfWork.SaveChangesAsync();
-
-        // 4. Token üret ve dön
-        var roles = new List<string> { dto.UserType }; // Örn: "Customer" veya "Seller"
-        var accessToken = _tokenService.GenerateAccessToken(user, roles);
-        var refreshToken = _tokenService.GenerateRefreshToken();
-
-        // Refresh token'ı kullanıcıya kaydedelim
-        user.RefreshToken = refreshToken;
-        user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
-        _userRepository.Update(user);
-        await _unitOfWork.SaveChangesAsync();
-
-        return new TokenResponseDto
-        {
-            AccessToken = accessToken,
-            RefreshToken = refreshToken,
-            AccessTokenExpiration = DateTime.UtcNow.AddMinutes(60),
-            RefreshTokenExpiration = DateTime.UtcNow.AddDays(7)
+            UserId = user.Id,
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            CreatedAt = DateTime.UtcNow
         };
+        await _customerRepository.AddAsync(customer);
+        await _unitOfWork.SaveChangesAsync();
+
+        return await GenerateTokensForUserAsync(user, Roles.Customer);
     }
 
+    // ==========================================
+    // 2. SATICI KAYIT (Sadece Şirket Bilgileri)
+    // ==========================================
+    public async Task<TokenResponseDto> RegisterSellerAsync(SellerRegisterDto dto)
+    {
+        var existingUsers = await _userRepository.GetAllAsync();
+        if (existingUsers.Any(u => u.Email == dto.Email))
+            throw new InvalidOperationException("Bu e-posta adresi ile zaten bir kayıt mevcut.");
+
+        var user = new User { Username = dto.Username, Email = dto.Email, CreatedAt = DateTime.UtcNow, IsActive = true };
+        user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
+
+        await _userRepository.AddAsync(user);
+        await _unitOfWork.SaveChangesAsync(); 
+
+        var seller = new Seller
+        {
+            UserId = user.Id,
+            CompanyName = dto.CompanyName,
+            TaxNumber = dto.TaxNumber,
+            ContactEmail = dto.Email,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _sellerRepository.AddAsync(seller);
+        await _unitOfWork.SaveChangesAsync();
+
+        return await GenerateTokensForUserAsync(user, Roles.Seller);
+    }
+
+    // ==========================================
+    // 3. ORTAK LOGİN (Admin, Seller, Customer)
+    // ==========================================
     public async Task<TokenResponseDto> LoginAsync(LoginDto dto)
     {
         var users = await _userRepository.GetAllAsync();
@@ -104,19 +97,51 @@ public class AuthService : IAuthService
         if (user == null || !user.IsActive)
             throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
 
-        // Şifre doğrulama
         var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
         if (result == PasswordVerificationResult.Failed)
             throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
 
-        // Şimdilik rollerini varsayılan olarak user türüne göre atayabiliriz (İleride Role tablosundan çekeceğiz)
-        // Kullanıcının Seller mi Customer mı olduğunu tablolardan sorgulayalım:
-        var sellers = await _sellerRepository.GetAllAsync();
-        var isSeller = sellers.Any(s => s.UserId == user.Id);
-        var role = isSeller ? "Seller" : "Customer";
+        string role;
+        
+        // ADMIN KONTROLÜ (Admin dışarıdan kayıt olamaz. DB'ye "admin@sistem.com" eklersen direkt Admin olarak tanır)
+        if (user.Email == "admin@sistem.com") 
+        {
+            role = Roles.Admin;
+        }
+        else 
+        {
+            var sellers = await _sellerRepository.GetAllAsync();
+            var isSeller = sellers.Any(s => s.UserId == user.Id);
+            role = isSeller ? Roles.Seller : Roles.Customer;
+        }
 
-        var roles = new List<string> { role };
-        var accessToken = _tokenService.GenerateAccessToken(user, roles);
+        return await GenerateTokensForUserAsync(user, role);
+    }
+
+    public async Task<TokenResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
+    {
+        var users = await _userRepository.GetAllAsync();
+        var user = users.FirstOrDefault(u => u.RefreshToken == dto.RefreshToken);
+
+        if (user == null || user.RefreshTokenExpiresAt <= DateTime.UtcNow)
+            throw new UnauthorizedAccessException("Geçersiz veya süresi dolmuş Refresh Token. Lütfen tekrar giriş yapın.");
+
+        string role;
+        if (user.Email == "admin@sistem.com") role = Roles.Admin;
+        else 
+        {
+            var sellers = await _sellerRepository.GetAllAsync();
+            var isSeller = sellers.Any(s => s.UserId == user.Id);
+            role = isSeller ? Roles.Seller : Roles.Customer;
+        }
+
+        return await GenerateTokensForUserAsync(user, role);
+    }
+
+    // Kod tekrarını önlemek için Token üreten ortak yardımcı metot (Private)
+    private async Task<TokenResponseDto> GenerateTokensForUserAsync(User user, string role)
+    {
+        var accessToken = _tokenService.GenerateAccessToken(user, new List<string> { role });
         var refreshToken = _tokenService.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;

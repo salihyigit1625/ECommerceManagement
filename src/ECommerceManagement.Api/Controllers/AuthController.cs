@@ -2,30 +2,48 @@ using ECommerceManagement.Application.DTOs.Auth;
 using ECommerceManagement.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-namespace ECommerceManagement.Api.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class AuthController : ControllerBase
+namespace ECommerceManagement.Api.Controllers
 {
-    private readonly IAuthService _authService;
-
-    public AuthController(IAuthService authService)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
     {
-        _authService = authService;
-    }
+        private readonly IAuthService _authService;
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterDto dto)
-    {
-        var response = await _authService.RegisterAsync(dto);
-        return Ok(response);
-    }
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
 
-    [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto dto)
-    {
-        var response = await _authService.LoginAsync(dto);
-        return Ok(response);
+        // MÜŞTERİ KAYIT KAPISI
+        [HttpPost("register-customer")]
+        public async Task<IActionResult> RegisterCustomer([FromBody] CustomerRegisterDto dto)
+        {
+            var result = await _authService.RegisterCustomerAsync(dto);
+            return Ok(result);
+        }
+
+        // SATICI KAYIT KAPISI
+        [HttpPost("register-seller")]
+        public async Task<IActionResult> RegisterSeller([FromBody] SellerRegisterDto dto)
+        {
+            var result = await _authService.RegisterSellerAsync(dto);
+            return Ok(result);
+        }
+
+        // HERKES İÇİN ORTAK GİRİŞ KAPISI
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            var result = await _authService.LoginAsync(dto);
+            return Ok(result);
+        }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto dto)
+        {
+            var result = await _authService.RefreshTokenAsync(dto);
+            return Ok(result);
+        }
     }
 }
