@@ -9,3 +9,4 @@
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/refint/ECommerceManagement.Domain.dll
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ECommerceManagement.Domain.pdb
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ref/ECommerceManagement.Domain.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/obj/Debug/net10.0/ECommerceManagement.Domain.sourcelink.json

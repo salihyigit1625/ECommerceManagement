@@ -1,0 +1,16 @@
+namespace ECommerceManagement.Application.DTOs.Catalog;
+
+public class ProductDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Sku { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+    public int Quantity { get; set; }
+    
+    // İlişkisel verilerin sadece ihtiyaç duyulan kısımları (Entity'leri dışarı açmıyoruz)
+    public int SellerId { get; set; }
+    public string CompanyName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public string WarehouseName { get; set; } = string.Empty;
+}

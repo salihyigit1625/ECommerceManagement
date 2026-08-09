@@ -1,4 +1,6 @@
+using ECommerceManagement.Application.Interfaces;
 using ECommerceManagement.Repository.Context;
+using ECommerceManagement.Repository.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +16,10 @@ builder.Services.AddDbContext<ECommerceDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+// Repository ve UnitOfWork Kayıtları
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 // ==========================================
 // 2. UYGULAMANIN İNŞASI (BUILD)
