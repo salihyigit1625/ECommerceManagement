@@ -1,11 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "go4Y667WvOI=",
+  "dgSpecHash": "GRNFFAgy0dc=",
   "success": true,
   "projectFilePath": "/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Application/ECommerceManagement.Application.csproj",
   "expectedPackageFiles": [
     "/Users/yigit/.nuget/packages/microsoft.aspnetcore.cryptography.internal/10.0.10/microsoft.aspnetcore.cryptography.internal.10.0.10.nupkg.sha512",
     "/Users/yigit/.nuget/packages/microsoft.aspnetcore.cryptography.keyderivation/10.0.10/microsoft.aspnetcore.cryptography.keyderivation.10.0.10.nupkg.sha512",
+    "/Users/yigit/.nuget/packages/microsoft.extensions.caching.abstractions/10.0.10/microsoft.extensions.caching.abstractions.10.0.10.nupkg.sha512",
     "/Users/yigit/.nuget/packages/microsoft.extensions.configuration/10.0.10/microsoft.extensions.configuration.10.0.10.nupkg.sha512",
     "/Users/yigit/.nuget/packages/microsoft.extensions.configuration.abstractions/10.0.10/microsoft.extensions.configuration.abstractions.10.0.10.nupkg.sha512",
     "/Users/yigit/.nuget/packages/microsoft.extensions.configuration.binder/10.0.10/microsoft.extensions.configuration.binder.10.0.10.nupkg.sha512",

@@ -66,7 +66,6 @@ public class ECommerceDbContext : DbContext
             .HasForeignKey<Invoice>(i => i.OrderId);
 
         // 3. RESTRICT DELETE BEHAVIORS (Cascade Silmeleri Engelleme)
-        // Özellikle sipariş tablolarında veri silindiğinde birbirini tetikleyerek patlamasını engelliyoruz.
         modelBuilder.Entity<Order>()
             .HasOne(o => o.Customer)
             .WithMany(c => c.Orders)
@@ -111,7 +110,6 @@ public class ECommerceDbContext : DbContext
             .IsUnique();
 
         // 5. PRECISION SETTINGS (Decimal Alanlar İçin Hassasiyet Ayarı)
-        // Kurumsal bir uygulamada para değerlerinin veritabanında kaç hane tutulacağını mutlaka belirtmeliyiz.
         foreach (var property in modelBuilder.Model.GetEntityTypes()
                      .SelectMany(t => t.GetProperties())
                      .Where(p => p.ClrType == typeof(decimal) || p.ClrType == typeof(decimal?)))
@@ -122,16 +120,33 @@ public class ECommerceDbContext : DbContext
         // ==========================================
         // SEED DATA (Başlangıç Test Verileri)
         // ==========================================
-    
-        // Not: HasData içinde DateTime.UtcNow kullanmak yerine sabit bir tarih vermek daha sağlıklıdır, 
-        // aksi halde EF Core her migration'da tarih değiştiği için kayıtları güncellemeye çalışır.
         var seedDate = new DateTime(2026, 8, 9, 0, 0, 0, DateTimeKind.Utc);
 
-        modelBuilder.Entity<User>().HasData(
-            new User { Id = 1, Username = "satici_ahmet", Email = "ahmet@test.com", PasswordHash = "dummy_hash", IsActive = true, CreatedAt = seedDate },
-            new User { Id = 2, Username = "musteri_mehmet", Email = "mehmet@test.com", PasswordHash = "dummy_hash", IsActive = true, CreatedAt = seedDate }
+        // 1. KULLANICILAR
+        var superAdmin = new User { Id = 3, Username = "superadmin", Email = "superadmin@sistem.com", PasswordHash = "SuperAdmin123!", IsActive = true, CreatedAt = seedDate };
+        var admin = new User { Id = 4, Username = "admin", Email = "admin@sistem.com", PasswordHash = "Admin123!", IsActive = true, CreatedAt = seedDate };
+        var satici = new User { Id = 1, Username = "satici_ahmet", Email = "ahmet@test.com", PasswordHash = "Satici123!", IsActive = true, CreatedAt = seedDate };
+        var musteri = new User { Id = 2, Username = "musteri_mehmet", Email = "mehmet@test.com", PasswordHash = "Musteri123!", IsActive = true, CreatedAt = seedDate };
+
+        modelBuilder.Entity<User>().HasData(satici, musteri, superAdmin, admin);
+
+        // 2. ROLLER
+        modelBuilder.Entity<Role>().HasData(
+            new Role { Id = 1, Name = "SuperAdmin", CreatedAt = seedDate },
+            new Role { Id = 2, Name = "Admin", CreatedAt = seedDate },
+            new Role { Id = 3, Name = "Seller", CreatedAt = seedDate },
+            new Role { Id = 4, Name = "Customer", CreatedAt = seedDate }
         );
 
+        // 3. KULLANICI - ROL İLİŞKİLERİ (Bağlantılar)
+        modelBuilder.Entity<UserRole>().HasData(
+            new UserRole { UserId = 1, RoleId = 3 }, // Ahmet -> Seller
+            new UserRole { UserId = 2, RoleId = 4 }, // Mehmet -> Customer
+            new UserRole { UserId = 3, RoleId = 1 }, // SuperAdmin -> SuperAdmin
+            new UserRole { UserId = 4, RoleId = 2 }  // Admin -> Admin
+        );
+
+        // 4. PROFİLLER VE DİĞER VERİLER
         modelBuilder.Entity<Seller>().HasData(
             new Seller { Id = 1, UserId = 1, CompanyName = "Ahmet Teknoloji", TaxNumber = "123456789", ContactEmail = "iletisim@ahmet.com", CreatedAt = seedDate }
         );
@@ -144,7 +159,6 @@ public class ECommerceDbContext : DbContext
             new Category { Id = 1, Name = "Bilgisayar Bileşenleri", CreatedAt = seedDate }
         );
 
-        // Warehouse'da SellerId YOK, düz platform deposu
         modelBuilder.Entity<Warehouse>().HasData(
             new Warehouse { Id = 1, Name = "Gebze Ana Depo", Location = "Kocaeli", IsActive = true, CreatedAt = seedDate }
         );
@@ -152,7 +166,5 @@ public class ECommerceDbContext : DbContext
         modelBuilder.Entity<Address>().HasData(
             new Address { Id = 1, CustomerId = 1, Title = "Ev Adresi", City = "Bursa", District = "Nilüfer", FullAddress = "Ata Bulvarı No:1", IsBilling = true, IsShipping = true, CreatedAt = seedDate }
         );
-        
-        
     }
 }

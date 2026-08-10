@@ -30,7 +30,7 @@ public class AuthService : IAuthService
     }
 
     // ==========================================
-    // 1. MÜŞTERİ KAYIT (Sadece Müşteri Bilgileri)
+    // 1. MÜŞTERİ KAYIT
     // ==========================================
     public async Task<TokenResponseDto> RegisterCustomerAsync(CustomerRegisterDto dto)
     {
@@ -58,7 +58,7 @@ public class AuthService : IAuthService
     }
 
     // ==========================================
-    // 2. SATICI KAYIT (Sadece Şirket Bilgileri)
+    // 2. SATICI KAYIT
     // ==========================================
     public async Task<TokenResponseDto> RegisterSellerAsync(SellerRegisterDto dto)
     {
@@ -87,7 +87,7 @@ public class AuthService : IAuthService
     }
 
     // ==========================================
-    // 3. ORTAK LOGİN (Admin, Seller, Customer)
+    // 3. ORTAK LOGİN
     // ==========================================
     public async Task<TokenResponseDto> LoginAsync(LoginDto dto)
     {
@@ -97,14 +97,22 @@ public class AuthService : IAuthService
         if (user == null || !user.IsActive)
             throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
 
-        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
-        if (result == PasswordVerificationResult.Failed)
-            throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
+        // Şifre doğrulama (Hem test verilerindeki düz metinleri hem de yeni kayıtların Hash'lerini destekler)
+        if (user.PasswordHash != dto.Password)
+        {
+            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+            if (result == PasswordVerificationResult.Failed)
+                throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
+        }
 
         string role;
         
-        // ADMIN KONTROLÜ (Admin dışarıdan kayıt olamaz. DB'ye "admin@sistem.com" eklersen direkt Admin olarak tanır)
-        if (user.Email == "admin@sistem.com") 
+        // ADMIN VE SUPERADMIN KONTROLÜ
+        if (user.Email == "superadmin@sistem.com") 
+        {
+            role = "SuperAdmin";
+        }
+        else if (user.Email == "admin@sistem.com") 
         {
             role = Roles.Admin;
         }
@@ -118,6 +126,9 @@ public class AuthService : IAuthService
         return await GenerateTokensForUserAsync(user, role);
     }
 
+    // ==========================================
+    // 4. REFRESH TOKEN
+    // ==========================================
     public async Task<TokenResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
     {
         var users = await _userRepository.GetAllAsync();
@@ -127,7 +138,15 @@ public class AuthService : IAuthService
             throw new UnauthorizedAccessException("Geçersiz veya süresi dolmuş Refresh Token. Lütfen tekrar giriş yapın.");
 
         string role;
-        if (user.Email == "admin@sistem.com") role = Roles.Admin;
+        
+        if (user.Email == "superadmin@sistem.com") 
+        {
+            role = "SuperAdmin";
+        }
+        else if (user.Email == "admin@sistem.com") 
+        {
+            role = Roles.Admin;
+        }
         else 
         {
             var sellers = await _sellerRepository.GetAllAsync();
@@ -138,7 +157,7 @@ public class AuthService : IAuthService
         return await GenerateTokensForUserAsync(user, role);
     }
 
-    // Kod tekrarını önlemek için Token üreten ortak yardımcı metot (Private)
+    // Ortak token üretme metodu
     private async Task<TokenResponseDto> GenerateTokensForUserAsync(User user, string role)
     {
         var accessToken = _tokenService.GenerateAccessToken(user, new List<string> { role });

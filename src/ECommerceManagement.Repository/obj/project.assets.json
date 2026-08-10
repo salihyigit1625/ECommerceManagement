@@ -1422,6 +1422,7 @@
         "framework": ".NETCoreApp,Version=v10.0",
         "dependencies": {
           "ECommerceManagement.Domain": "1.0.0",
+          "Microsoft.Extensions.Caching.Abstractions": "10.0.10",
           "Microsoft.Extensions.Identity.Core": "10.0.10",
           "Microsoft.OpenApi": "3.9.0"
         },

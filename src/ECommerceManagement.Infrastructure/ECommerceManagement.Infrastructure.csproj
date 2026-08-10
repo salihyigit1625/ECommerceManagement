@@ -10,10 +10,12 @@
     <ItemGroup>
       <ProjectReference Include="..\ECommerceManagement.Application\ECommerceManagement.Application.csproj" />
       <ProjectReference Include="..\ECommerceManagement.Domain\ECommerceManagement.Domain.csproj" />
+      <ProjectReference Include="..\ECommerceManagement.Repository\ECommerceManagement.Repository.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+      <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.10" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
     </ItemGroup>
 

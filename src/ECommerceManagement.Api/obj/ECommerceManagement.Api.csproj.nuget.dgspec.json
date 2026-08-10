@@ -557,6 +557,10 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
+            "Microsoft.Extensions.Caching.Abstractions": {
+              "target": "Package",
+              "version": "[10.0.10, )"
+            },
             "Microsoft.Extensions.Identity.Core": {
               "target": "Package",
               "version": "[10.0.10, )"
@@ -1223,6 +1227,9 @@
               },
               "/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/ECommerceManagement.Domain.csproj": {
                 "projectPath": "/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Domain/ECommerceManagement.Domain.csproj"
+              },
+              "/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/ECommerceManagement.Repository.csproj": {
+                "projectPath": "/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Repository/ECommerceManagement.Repository.csproj"
               }
             }
           }
@@ -1245,6 +1252,10 @@
           "targetAlias": "net10.0",
           "dependencies": {
             "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[10.0.10, )"
+            },
+            "Microsoft.Extensions.Caching.StackExchangeRedis": {
               "target": "Package",
               "version": "[10.0.10, )"
             },

@@ -1,10 +1,12 @@
 using System.Text;
 using ECommerceManagement.Application.Interfaces;
 using ECommerceManagement.Application.Services;
+using ECommerceManagement.Infrastructure.Security;
 using ECommerceManagement.Infrastructure.Services;
 using ECommerceManagement.Repository.Context;
 using ECommerceManagement.Repository.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models; // Swagger güvenlik şeması için şart
@@ -40,6 +42,10 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
+
+// --- DİNAMİK YETKİLENDİRME (PERMISSION) KAYITLARI ---
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 // --- SWAGGER & JWT KİLİT (AUTHORIZE) AYARI ---
 builder.Services.AddEndpointsApiExplorer();
@@ -77,6 +83,12 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddDbContext<ECommerceDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+
+// Redis Kaydı
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("RedisConnection");
 });
 
 // Repository ve UnitOfWork Kayıtları

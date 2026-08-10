@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ECommerceManagement.Repository.Migrations
 {
     [DbContext(typeof(ECommerceDbContext))]
-    [Migration("20260807140231_InitialCreate")]
+    [Migration("20260810003140_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -66,6 +66,20 @@ namespace ECommerceManagement.Repository.Migrations
                     b.HasIndex("CustomerId");
 
                     b.ToTable("Addresses");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            City = "Bursa",
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            CustomerId = 1,
+                            District = "Nilüfer",
+                            FullAddress = "Ata Bulvarı No:1",
+                            IsBilling = true,
+                            IsShipping = true,
+                            Title = "Ev Adresi"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.Category", b =>
@@ -91,6 +105,14 @@ namespace ECommerceManagement.Repository.Migrations
                     b.HasIndex("ParentCategoryId");
 
                     b.ToTable("Categories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Bilgisayar Bileşenleri"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.Customer", b =>
@@ -124,6 +146,17 @@ namespace ECommerceManagement.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("Customers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FirstName = "Mehmet",
+                            LastName = "Yılmaz",
+                            Phone = "5551234567",
+                            UserId = 2
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.Invoice", b =>
@@ -445,6 +478,32 @@ namespace ECommerceManagement.Repository.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "SuperAdmin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Seller"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Customer"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.RolePermission", b =>
@@ -497,6 +556,17 @@ namespace ECommerceManagement.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("Sellers");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CompanyName = "Ahmet Teknoloji",
+                            ContactEmail = "iletisim@ahmet.com",
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            TaxNumber = "123456789",
+                            UserId = 1
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.User", b =>
@@ -537,6 +607,44 @@ namespace ECommerceManagement.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "ahmet@test.com",
+                            IsActive = true,
+                            PasswordHash = "Satici123!",
+                            Username = "satici_ahmet"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "mehmet@test.com",
+                            IsActive = true,
+                            PasswordHash = "Musteri123!",
+                            Username = "musteri_mehmet"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "superadmin@sistem.com",
+                            IsActive = true,
+                            PasswordHash = "SuperAdmin123!",
+                            Username = "superadmin"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "admin@sistem.com",
+                            IsActive = true,
+                            PasswordHash = "Admin123!",
+                            Username = "admin"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.UserPermission", b =>
@@ -596,6 +704,16 @@ namespace ECommerceManagement.Repository.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Warehouses");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Location = "Kocaeli",
+                            Name = "Gebze Ana Depo"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.Address", b =>

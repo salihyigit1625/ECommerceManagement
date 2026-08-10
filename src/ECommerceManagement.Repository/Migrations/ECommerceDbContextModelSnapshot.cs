@@ -475,6 +475,32 @@ namespace ECommerceManagement.Repository.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "SuperAdmin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Seller"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "Customer"
+                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.RolePermission", b =>
@@ -586,7 +612,7 @@ namespace ECommerceManagement.Repository.Migrations
                             CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "ahmet@test.com",
                             IsActive = true,
-                            PasswordHash = "dummy_hash",
+                            PasswordHash = "Satici123!",
                             Username = "satici_ahmet"
                         },
                         new
@@ -595,8 +621,26 @@ namespace ECommerceManagement.Repository.Migrations
                             CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
                             Email = "mehmet@test.com",
                             IsActive = true,
-                            PasswordHash = "dummy_hash",
+                            PasswordHash = "Musteri123!",
                             Username = "musteri_mehmet"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "superadmin@sistem.com",
+                            IsActive = true,
+                            PasswordHash = "SuperAdmin123!",
+                            Username = "superadmin"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Email = "admin@sistem.com",
+                            IsActive = true,
+                            PasswordHash = "Admin123!",
+                            Username = "admin"
                         });
                 });
 
