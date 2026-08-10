@@ -1,4 +1,4 @@
-using ECommerceManagement.Application.Constants;
+using ECommerceManagement.Domain.Constants;
 using ECommerceManagement.Application.DTOs.Auth;
 using ECommerceManagement.Application.Interfaces;
 using ECommerceManagement.Domain.Entities;
@@ -11,6 +11,7 @@ public class AuthService : IAuthService
     private readonly IGenericRepository<User> _userRepository;
     private readonly IGenericRepository<Customer> _customerRepository;
     private readonly IGenericRepository<Seller> _sellerRepository;
+    private readonly IGenericRepository<UserRole> _userRoleRepository; // Sisteme eklendi
     private readonly ITokenService _tokenService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly PasswordHasher<User> _passwordHasher = new();
@@ -19,12 +20,14 @@ public class AuthService : IAuthService
         IGenericRepository<User> userRepository,
         IGenericRepository<Customer> customerRepository,
         IGenericRepository<Seller> sellerRepository,
+        IGenericRepository<UserRole> userRoleRepository, // Sisteme eklendi
         ITokenService tokenService,
         IUnitOfWork unitOfWork)
     {
         _userRepository = userRepository;
         _customerRepository = customerRepository;
         _sellerRepository = sellerRepository;
+        _userRoleRepository = userRoleRepository;
         _tokenService = tokenService;
         _unitOfWork = unitOfWork;
     }
@@ -44,6 +47,7 @@ public class AuthService : IAuthService
         await _userRepository.AddAsync(user);
         await _unitOfWork.SaveChangesAsync(); 
 
+        // Profil Oluşturma
         var customer = new Customer
         {
             UserId = user.Id,
@@ -52,9 +56,14 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow
         };
         await _customerRepository.AddAsync(customer);
+
+        // KRİTİK DÜZELTME: Kullanıcıya Veritabanında Rol Atama (Id: 4 -> Customer)
+        var userRole = new UserRole { UserId = user.Id, RoleId = 4 };
+        await _userRoleRepository.AddAsync(userRole);
+        
         await _unitOfWork.SaveChangesAsync();
 
-        return await GenerateTokensForUserAsync(user, Roles.Customer);
+        return await GenerateTokensForUserAsync(user, AppRoles.Customer);
     }
 
     // ==========================================
@@ -72,6 +81,7 @@ public class AuthService : IAuthService
         await _userRepository.AddAsync(user);
         await _unitOfWork.SaveChangesAsync(); 
 
+        // Profil Oluşturma
         var seller = new Seller
         {
             UserId = user.Id,
@@ -81,9 +91,14 @@ public class AuthService : IAuthService
             CreatedAt = DateTime.UtcNow
         };
         await _sellerRepository.AddAsync(seller);
+
+        // KRİTİK DÜZELTME: Kullanıcıya Veritabanında Rol Atama (Id: 3 -> Seller)
+        var userRole = new UserRole { UserId = user.Id, RoleId = 3 };
+        await _userRoleRepository.AddAsync(userRole);
+        
         await _unitOfWork.SaveChangesAsync();
 
-        return await GenerateTokensForUserAsync(user, Roles.Seller);
+        return await GenerateTokensForUserAsync(user, AppRoles.Seller);
     }
 
     // ==========================================
@@ -97,7 +112,7 @@ public class AuthService : IAuthService
         if (user == null || !user.IsActive)
             throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
 
-        // Şifre doğrulama (Hem test verilerindeki düz metinleri hem de yeni kayıtların Hash'lerini destekler)
+        // Şifre doğrulama
         if (user.PasswordHash != dto.Password)
         {
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
@@ -107,20 +122,20 @@ public class AuthService : IAuthService
 
         string role;
         
-        // ADMIN VE SUPERADMIN KONTROLÜ
+        // ADMIN VE SUPERADMIN KONTROLÜ (Sihirli metinler düzeltildi)
         if (user.Email == "superadmin@sistem.com") 
         {
-            role = "SuperAdmin";
+            role = AppRoles.SuperAdmin;
         }
         else if (user.Email == "admin@sistem.com") 
         {
-            role = Roles.Admin;
+            role = AppRoles.Admin;
         }
         else 
         {
             var sellers = await _sellerRepository.GetAllAsync();
             var isSeller = sellers.Any(s => s.UserId == user.Id);
-            role = isSeller ? Roles.Seller : Roles.Customer;
+            role = isSeller ? AppRoles.Seller : AppRoles.Customer;
         }
 
         return await GenerateTokensForUserAsync(user, role);
@@ -139,19 +154,20 @@ public class AuthService : IAuthService
 
         string role;
         
+        // Sihirli metinler düzeltildi
         if (user.Email == "superadmin@sistem.com") 
         {
-            role = "SuperAdmin";
+            role = AppRoles.SuperAdmin;
         }
         else if (user.Email == "admin@sistem.com") 
         {
-            role = Roles.Admin;
+            role = AppRoles.Admin;
         }
         else 
         {
             var sellers = await _sellerRepository.GetAllAsync();
             var isSeller = sellers.Any(s => s.UserId == user.Id);
-            role = isSeller ? Roles.Seller : Roles.Customer;
+            role = isSeller ? AppRoles.Seller : AppRoles.Customer;
         }
 
         return await GenerateTokensForUserAsync(user, role);

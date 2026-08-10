@@ -1,14 +1,15 @@
-using ECommerceManagement.Application.Constants;
 using ECommerceManagement.Application.DTOs.Auth;
 using ECommerceManagement.Application.DTOs.Catalog;
 using ECommerceManagement.Application.Interfaces;
+using ECommerceManagement.Domain.Constants;
 using ECommerceManagement.Infrastructure.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceManagement.Api.Controllers
 {
-    [Authorize(Roles = Roles.Admin)]
+    // Authorize etiketinde const (sabit) string'leri + ile birleştirebiliriz
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.SuperAdmin)] 
     [Route("api/[controller]")]
     [ApiController]
     public class AdminController : ControllerBase
@@ -20,6 +21,7 @@ namespace ECommerceManagement.Api.Controllers
             _adminService = adminService;
         }
 
+        [HasPermission(AppPermissions.ReadCatalog)]
         [HttpGet("categories")]
         public async Task<IActionResult> GetAllCategories()
         {
@@ -27,6 +29,7 @@ namespace ECommerceManagement.Api.Controllers
             return Ok(categories);
         }
 
+        [HasPermission(AppPermissions.ManageCatalog)]
         [HttpPost("categories")]
         public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto)
         {
@@ -34,6 +37,7 @@ namespace ECommerceManagement.Api.Controllers
             return Ok(new { Message = "Kategori başarıyla oluşturuldu." });
         }
 
+        [HasPermission(AppPermissions.ReadWarehouses)]
         [HttpGet("warehouses")]
         public async Task<IActionResult> GetAllWarehouses()
         {
@@ -41,6 +45,7 @@ namespace ECommerceManagement.Api.Controllers
             return Ok(warehouses);
         }
 
+        [HasPermission(AppPermissions.ManageWarehouses)]
         [HttpPost("warehouses")]
         public async Task<IActionResult> CreateWarehouse([FromBody] CreateWarehouseDto dto)
         {
@@ -48,7 +53,7 @@ namespace ECommerceManagement.Api.Controllers
             return Ok(new { Message = "Depo başarıyla oluşturuldu." });
         }
         
-        [HasPermission("Users.ManageRoles")] // Sadece Süper Adminlerde olacak yetki
+        [HasPermission(AppPermissions.ManageRoles)]
         [HttpPost("assign-role")]
         public async Task<IActionResult> AssignRole([FromBody] AssignRoleDto dto)
         {
@@ -56,7 +61,7 @@ namespace ECommerceManagement.Api.Controllers
             return Ok(new { Message = "Rol kullanıcıya başarıyla atandı ve yetki önbelleği temizlendi." });
         }
 
-        [HasPermission("Users.ManagePermissions")] // Sadece Süper Adminlerde olacak yetki
+        [HasPermission(AppPermissions.ManagePermissions)]
         [HttpPost("assign-permission")]
         public async Task<IActionResult> AssignPermission([FromBody] AssignUserPermissionDto dto)
         {

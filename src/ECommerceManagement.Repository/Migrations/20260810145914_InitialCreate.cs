@@ -466,9 +466,20 @@ namespace ECommerceManagement.Repository.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "Categories",
-                columns: new[] { "Id", "CreatedAt", "Name", "ParentCategoryId" },
-                values: new object[] { 1, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Bilgisayar Bileşenleri", null });
+                table: "Permissions",
+                columns: new[] { "Id", "CreatedAt", "ModuleName", "Name" },
+                values: new object[,]
+                {
+                    { 1, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Users", "Users.ManageRoles" },
+                    { 2, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Users", "Users.ManagePermissions" },
+                    { 3, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Catalog", "Catalog.Manage" },
+                    { 4, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Catalog", "Catalog.Read" },
+                    { 5, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Warehouses", "Warehouses.Manage" },
+                    { 6, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Warehouses", "Warehouses.Read" },
+                    { 7, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Products", "Products.Manage" },
+                    { 8, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Orders", "Orders.Create" },
+                    { 9, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Orders", "Orders.Read" }
+                });
 
             migrationBuilder.InsertData(
                 table: "Roles",
@@ -484,33 +495,29 @@ namespace ECommerceManagement.Repository.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "CreatedAt", "Email", "IsActive", "PasswordHash", "RefreshToken", "RefreshTokenExpiresAt", "Username" },
+                values: new object[] { 1, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "superadmin@sistem.com", true, "SuperAdmin123!", null, null, "superadmin" });
+
+            migrationBuilder.InsertData(
+                table: "RolePermissions",
+                columns: new[] { "PermissionId", "RoleId" },
                 values: new object[,]
                 {
-                    { 1, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "ahmet@test.com", true, "Satici123!", null, null, "satici_ahmet" },
-                    { 2, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "mehmet@test.com", true, "Musteri123!", null, null, "musteri_mehmet" },
-                    { 3, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "superadmin@sistem.com", true, "SuperAdmin123!", null, null, "superadmin" },
-                    { 4, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "admin@sistem.com", true, "Admin123!", null, null, "admin" }
+                    { 3, 2 },
+                    { 4, 2 },
+                    { 5, 2 },
+                    { 6, 2 },
+                    { 4, 3 },
+                    { 7, 3 },
+                    { 9, 3 },
+                    { 4, 4 },
+                    { 8, 4 },
+                    { 9, 4 }
                 });
 
             migrationBuilder.InsertData(
-                table: "Warehouses",
-                columns: new[] { "Id", "CreatedAt", "IsActive", "Location", "Name" },
-                values: new object[] { 1, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), true, "Kocaeli", "Gebze Ana Depo" });
-
-            migrationBuilder.InsertData(
-                table: "Customers",
-                columns: new[] { "Id", "CreatedAt", "FirstName", "LastName", "Phone", "UserId" },
-                values: new object[] { 1, new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "Mehmet", "Yılmaz", "5551234567", 2 });
-
-            migrationBuilder.InsertData(
-                table: "Sellers",
-                columns: new[] { "Id", "CompanyName", "ContactEmail", "CreatedAt", "TaxNumber", "UserId" },
-                values: new object[] { 1, "Ahmet Teknoloji", "iletisim@ahmet.com", new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), "123456789", 1 });
-
-            migrationBuilder.InsertData(
-                table: "Addresses",
-                columns: new[] { "Id", "City", "CreatedAt", "CustomerId", "District", "FullAddress", "IsBilling", "IsShipping", "Title" },
-                values: new object[] { 1, "Bursa", new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc), 1, "Nilüfer", "Ata Bulvarı No:1", true, true, "Ev Adresi" });
+                table: "UserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[] { 1, 1 });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Addresses_CustomerId",

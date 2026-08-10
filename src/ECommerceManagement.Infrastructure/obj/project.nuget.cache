@@ -1,9 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "yS5WS7QIKew=",
+  "dgSpecHash": "70VbaGPUXbE=",
   "success": true,
   "projectFilePath": "/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/ECommerceManagement.Infrastructure.csproj",
   "expectedPackageFiles": [
+    "/Users/yigit/.nuget/packages/automapper/16.2.0/automapper.16.2.0.nupkg.sha512",
     "/Users/yigit/.nuget/packages/azure.core/1.47.1/azure.core.1.47.1.nupkg.sha512",
     "/Users/yigit/.nuget/packages/azure.identity/1.14.2/azure.identity.1.14.2.nupkg.sha512",
     "/Users/yigit/.nuget/packages/microsoft.aspnetcore.authentication.jwtbearer/10.0.10/microsoft.aspnetcore.authentication.jwtbearer.10.0.10.nupkg.sha512",

@@ -1,4 +1,4 @@
-using ECommerceManagement.Application.Constants;
+using ECommerceManagement.Domain.Constants;
 using ECommerceManagement.Application.DTOs.Catalog;
 using ECommerceManagement.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceManagement.Api.Controllers;
 
-[Authorize(Roles = Roles.Seller)]
+[Authorize(Roles = AppRoles.Seller)]
 [ApiController]
 [Route("api/[controller]")]
 public class SellerController : ControllerBase
