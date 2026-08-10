@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceManagement.Api.Controllers
 {
-    // Authorize etiketinde const (sabit) string'leri + ile birleştirebiliriz
     [Authorize(Roles = AppRoles.Admin + "," + AppRoles.SuperAdmin)] 
     [Route("api/[controller]")]
     [ApiController]

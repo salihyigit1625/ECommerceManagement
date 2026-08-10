@@ -14,22 +14,18 @@ public class SellerController : ControllerBase
     private readonly IProductService _productService;
     private readonly ISellerOrderService _sellerOrderService;
 
-    // Servislerimizi (İş Kurallarımızı) içeri alıyoruz (Dependency Injection)
     public SellerController(IProductService productService, ISellerOrderService sellerOrderService)
     {
         _productService = productService;
         _sellerOrderService = sellerOrderService;
     }
 
-    // ==========================================
-    // 1. ÜRÜN VE STOK YÖNETİMİ
-    // ==========================================
-
+    
     [HttpGet("products")]
     public async Task<IActionResult> GetMyProducts([FromQuery] int sellerId)
     {
         var products = await _productService.GetProductsBySellerIdAsync(sellerId);
-        return Ok(products); // HTTP 200 döner
+        return Ok(products);
     }
 
     [HttpPost("products")]
@@ -53,10 +49,6 @@ public class SellerController : ControllerBase
         return Ok(new { Message = "Ürün başarıyla silindi (pasife çekildi)." });
     }
 
-    // ==========================================
-    // 2. SİPARİŞ VE FATURA YÖNETİMİ
-    // ==========================================
-
     [HttpGet("/orders/pending")]
     public async Task<IActionResult> GetPendingOrders([FromQuery]int sellerId)
     {
@@ -68,7 +60,7 @@ public class SellerController : ControllerBase
     public async Task<IActionResult> CreateInvoiceDraft([FromQuery]int sellerId,[FromQuery] int orderId)
     {
         var invoice = await _sellerOrderService.CreateInvoiceDraftAsync(orderId, sellerId);
-        return Ok(invoice); // Oluşturulan fatura taslağını geri döner
+        return Ok(invoice);
     }
 
     [HttpPut("/invoices/confirm")]

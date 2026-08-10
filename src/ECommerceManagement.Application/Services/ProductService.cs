@@ -40,7 +40,6 @@ public class ProductService : IProductService
 
     public async Task AddAsync(CreateProductDto dto)
     {
-        // İş Kuralları
         if (dto.Price <= 0)
             throw new InvalidOperationException("Ürün fiyatı 0'dan büyük olmalıdır.");
 
@@ -66,7 +65,6 @@ public class ProductService : IProductService
         if (dto.Quantity < 0)
             throw new InvalidOperationException("Stok miktarı negatif olamaz.");
 
-        // DTO'daki yeni değerleri var olan Entity'nin üzerine otomatik yazar
         _mapper.Map(dto, product);
         product.UpdatedAt = DateTime.UtcNow;
 

@@ -15,7 +15,6 @@ namespace ECommerceManagement.Api.Controllers
             _authService = authService;
         }
 
-        // MÜŞTERİ KAYIT KAPISI
         [HttpPost("register-customer")]
         public async Task<IActionResult> RegisterCustomer([FromBody] CustomerRegisterDto dto)
         {
@@ -23,7 +22,6 @@ namespace ECommerceManagement.Api.Controllers
             return Ok(result);
         }
 
-        // SATICI KAYIT KAPISI
         [HttpPost("register-seller")]
         public async Task<IActionResult> RegisterSeller([FromBody] SellerRegisterDto dto)
         {
@@ -31,7 +29,6 @@ namespace ECommerceManagement.Api.Controllers
             return Ok(result);
         }
 
-        // HERKES İÇİN ORTAK GİRİŞ KAPISI
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {

@@ -24,18 +24,17 @@ namespace ECommerceManagement.Infrastructure.Security
             if (context.User.Identity == null || !context.User.Identity.IsAuthenticated)
                 return;
 
-            // 2. GARANTİ SÜPER ADMİN KONTROLÜ (Claim Mapping hatalarını ezer geçer)
+            // 2. SÜPER ADMİN KONTROLÜ
             var userRole = context.User.FindFirst(ClaimTypes.Role)?.Value 
                         ?? context.User.FindFirst("role")?.Value;
 
-            // "SuperAdmin" metni yerine oluşturduğumuz Roles sabitini kullanıyoruz
             if (userRole == AppRoles.SuperAdmin)
             {
                 context.Succeed(requirement);
                 return;
             }
 
-            // Token içinden Kullanıcı ID'sini al (Alternatif claim isimlerini de kontrol ederek garantiye alıyoruz)
+            // Token içinden Kullanıcı ID'sini al
             var userIdStr = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
                          ?? context.User.FindFirst("nameid")?.Value 
                          ?? context.User.FindFirst("sub")?.Value;
@@ -43,7 +42,6 @@ namespace ECommerceManagement.Infrastructure.Security
             if (!int.TryParse(userIdStr, out int userId))
                 return;
 
-            // Normal kullanıcılar ve satıcılar için veritabanı / Redis mantığı buradan sonra çalışmaya devam eder...
             using var scope = _scopeFactory.CreateScope();
             var cache = scope.ServiceProvider.GetRequiredService<IDistributedCache>();
             var dbContext = scope.ServiceProvider.GetRequiredService<ECommerceDbContext>();

@@ -32,7 +32,6 @@ public class SellerOrderService : ISellerOrderService
         _mapper = mapper;
     }
 
-    // 1. Satıcı sadece kendisine gelen Pending siparişleri listeler
     public async Task<IEnumerable<OrderDto>> GetPendingOrdersAsync(int sellerId)
     {
         var orders = await _orderRepository.GetAllAsync(
@@ -65,7 +64,6 @@ public class SellerOrderService : ISellerOrderService
             });
     }
 
-    // 2. Fatura Taslağı Oluşturma (InvoiceStatus = Waiting)
     public async Task<InvoiceDto> CreateInvoiceDraftAsync(int orderId, int sellerId)
     {
         var order = await _orderRepository.GetByIdAsync(orderId);
@@ -95,7 +93,6 @@ public class SellerOrderService : ISellerOrderService
         return _mapper.Map<InvoiceDto>(invoice);
     }
 
-    // 3. Faturayı Onaylama (InvoiceStatus = Confirmed, OrderStatus = Invoiced)
     public async Task ConfirmInvoiceAndOrderAsync(int invoiceId, int sellerId)
     {
         var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
@@ -119,7 +116,6 @@ public class SellerOrderService : ISellerOrderService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    // 4. Kargolama (OrderStatus = Shipped)
     public async Task ShipOrderAsync(int orderId, int sellerId)
     {
         var order = await _orderRepository.GetByIdAsync(orderId);
@@ -136,7 +132,6 @@ public class SellerOrderService : ISellerOrderService
         await _unitOfWork.SaveChangesAsync();
     }
 
-    // 5. Sipariş İptali (Sipariş & Fatura = Canceled, Stoklar Geri İade Edilir)
     public async Task CancelOrderAsync(int orderId, int sellerId)
     {
         var order = await _orderRepository.GetByIdAsync(orderId);
@@ -161,7 +156,6 @@ public class SellerOrderService : ISellerOrderService
         await _unitOfWork.SaveChangesAsync();
     }
     
-    // Satıcının TÜM siparişlerini durum fark etmeksizin getirir
     public async Task<IEnumerable<OrderDto>> GetAllOrdersBySellerIdAsync(int sellerId)
     {
         var orders = await _orderRepository.GetAllAsync(
@@ -194,7 +188,6 @@ public class SellerOrderService : ISellerOrderService
             });
     }
 
-    // Satıcının kestiği tüm faturaları getirir
     public async Task<IEnumerable<InvoiceDto>> GetInvoicesBySellerIdAsync(int sellerId)
     {
         var invoices = await _invoiceRepository.GetAllAsync();

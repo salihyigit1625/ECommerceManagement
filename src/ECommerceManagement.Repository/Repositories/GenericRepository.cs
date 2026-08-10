@@ -21,7 +21,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         return await _dbSet.FindAsync(id);
     }
 
-    // Include destekli GetById
     public async Task<T?> GetByIdAsync(int id, params Expression<Func<T, object?>>[] includes)
     {
         IQueryable<T> query = _dbSet;
@@ -38,7 +37,6 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
         return await _dbSet.ToListAsync();
     }
 
-    // Include destekli GetAll
     public async Task<IEnumerable<T>> GetAllAsync(params Expression<Func<T, object?>>[] includes)
     {
         IQueryable<T> query = _dbSet;

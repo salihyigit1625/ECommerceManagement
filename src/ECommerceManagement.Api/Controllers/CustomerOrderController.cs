@@ -28,7 +28,6 @@ public class CustomerOrderController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
     {
-        // Sepetteki ürünler satıcılara göre bölünür, ayrı siparişler oluşur ve stoklar düşer
         await _customerOrderService.CreateOrderAsync(dto);
         
         return Ok(new { Message = "Siparişler başarıyla oluşturuldu." });
@@ -37,7 +36,6 @@ public class CustomerOrderController : ControllerBase
     [HttpPut("cancel")]
     public async Task<IActionResult> CancelOrder([FromBody] CancelOrderDto dto)
     {
-        // Sadece "Pending" durumundaki siparişler iptal edilebilir
         await _customerOrderService.CancelMyOrderAsync(dto.OrderId, dto.CustomerId);
         
         return Ok(new { Message = "Sipariş başarıyla iptal edildi." });

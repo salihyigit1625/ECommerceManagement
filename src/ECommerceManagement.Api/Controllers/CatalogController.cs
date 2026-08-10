@@ -17,7 +17,6 @@ public class CatalogController : ControllerBase
     [HttpGet("products")]
     public async Task<IActionResult> GetActiveProducts()
     {
-        // Sadece stoğu olan ve IsActive = true olan ürünler döner
         var products = await _catalogService.GetActiveProductsAsync();
         return Ok(products);
     }

@@ -17,7 +17,7 @@ public class Order : BaseEntity
     public Seller Seller { get; set; } = null!;
     public Address ShippingAddress { get; set; } = null!;
     public Address BillingAddress { get; set; } = null!;
-    public Invoice? Invoice { get; set; } // 1-to-1 ilişki
+    public Invoice? Invoice { get; set; }
 
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 }

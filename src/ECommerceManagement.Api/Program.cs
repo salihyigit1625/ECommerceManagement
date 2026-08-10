@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models; // Swagger güvenlik şeması için şart
+using Microsoft.OpenApi.Models; 
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,13 +21,13 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. SERVİS KAYITLARI
 // ==========================================
 builder.Services.AddControllers();
+
 builder.Services.AddAutoMapper(config => 
 {
     config.AddProfile<MappingProfile>();
 });
-// FluentValidation'ı sisteme dahil et ve otomatik doğrulamayı aç
+
 builder.Services.AddFluentValidationAutoValidation();
-// Yazdığımız tüm Validator sınıflarını otomatik bulup sisteme kaydet
 builder.Services.AddValidatorsFromAssemblyContaining<CustomerRegisterDtoValidator>();
 
 // --- JWT & AUTHENTICATION SERVİSLERİ ---
@@ -65,7 +65,6 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "ECommerceManagement API", Version = "v1" });
 
-    // Sağ üstteki Authorize kilidini ekler
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
@@ -82,7 +81,7 @@ builder.Services.AddSwaggerGen(c =>
             {
                 Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme, // Veya ReferenceType.SecurityScheme
+                    Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
                 }
             },
@@ -116,14 +115,11 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// ==========================================
-// 2. UYGULAMANIN İNŞASI (BUILD)
-// ==========================================
+
+//UYGULAMANIN İNŞASI (BUILD)
 var app = builder.Build();
 
-// ==========================================
-// 3. HTTP REQUEST PIPELINE (Middleware'ler)
-// ==========================================
+// HTTP REQUEST PIPELINE (Middleware'ler)
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -136,7 +132,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// ÖNEMLİ: Authentication mutlaka Authorization'dan ÖNCE yazılmalıdır!
+// Authentication mutlaka Authorization'dan ÖNCE yazılmalıdır!
 app.UseAuthentication();
 app.UseAuthorization();
 

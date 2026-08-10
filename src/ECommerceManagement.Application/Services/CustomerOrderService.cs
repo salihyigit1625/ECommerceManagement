@@ -23,13 +23,11 @@ public class CustomerOrderService : ICustomerOrderService
 
     public async Task<IEnumerable<OrderDto>> GetMyOrdersAsync(int customerId)
     {
-        // 1. Siparişleri, müşteriyi ve sipariş kalemlerini çekiyoruz
         var orders = await _orderRepository.GetAllAsync(
             o => o.Customer, 
             o => o.OrderItems
         );
 
-        // 2. Ürün adlarını eşleştirebilmek için sistemdeki tüm ürünleri çekip sözlüğe (Dictionary) atıyoruz
         var products = await _productRepository.GetAllAsync();
         var productDict = products.ToDictionary(p => p.Id, p => p.Name);
 
@@ -47,7 +45,6 @@ public class CustomerOrderService : ICustomerOrderService
                 Items = o.OrderItems.Select(item => new OrderItemDto
                 {
                     ProductId = item.ProductId,
-                    // Sözlükten ProductId'ye karşılık gelen ismi çekiyoruz!
                     ProductName = productDict.TryGetValue(item.ProductId, out var prodName) ? prodName : string.Empty,
                     Quantity = item.Quantity,
                     UnitPrice = item.UnitPrice,
@@ -61,7 +58,6 @@ public class CustomerOrderService : ICustomerOrderService
         if (!dto.Items.Any())
             throw new ArgumentException("Sepet boş olamaz.");
 
-        // 1. Ürünleri DB'den çek ve stok kontrolü yap
         var allProducts = await _productRepository.GetAllAsync();
         var orderProducts = new List<(Product Entity, int RequestedQuantity)>();
 
@@ -78,7 +74,6 @@ public class CustomerOrderService : ICustomerOrderService
             orderProducts.Add((product, item.Quantity));
         }
 
-        // 2. Sepetteki ürünleri SATICILARA GÖRE GRUPLA (Pazaryeri Mantığı)
         var groupedBySeller = orderProducts.GroupBy(p => p.Entity.SellerId);
 
         foreach (var sellerGroup in groupedBySeller)
@@ -94,7 +89,6 @@ public class CustomerOrderService : ICustomerOrderService
                 var lineTotal = product.Price * reqQty;
                 totalAmount += lineTotal;
 
-                // Stok Düşme İşlemi (Memory'de güncellenir)
                 product.Quantity -= reqQty;
                 _productRepository.Update(product);
 
@@ -107,7 +101,6 @@ public class CustomerOrderService : ICustomerOrderService
                 });
             }
 
-            // O satıcı için yeni bir sipariş oluşturulur
             var newOrder = new Order
             {
                 CustomerId = dto.CustomerId,
@@ -115,20 +108,18 @@ public class CustomerOrderService : ICustomerOrderService
                 ShippingAddressId = dto.ShippingAddressId,
                 BillingAddressId = dto.BillingAddressId,
                 TotalAmount = totalAmount,
-                Status = OrderStatus.Pending, // Satıcıya düşmesi için bekliyor
+                Status = OrderStatus.Pending,
                 OrderItems = orderItems
             };
 
             await _orderRepository.AddAsync(newOrder);
         }
 
-        // 3. UnitOfWork ile tüm stok güncellemelerini ve yeni siparişleri tek Transaction'da kaydet
         await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task CancelMyOrderAsync(int orderId, int customerId)
     {
-        // 1. Siparişi çekerken OrderItems tablosunu da Include ediyoruz!
         var order = await _orderRepository.GetByIdAsync(orderId, o => o.OrderItems);
     
         if (order == null || order.CustomerId != customerId)
@@ -140,13 +131,11 @@ public class CustomerOrderService : ICustomerOrderService
         order.Status = OrderStatus.Canceled;
         order.UpdatedAt = DateTime.UtcNow;
     
-        // 2. STOK İADE ALGORİTMASI (Rollback)
         foreach (var item in order.OrderItems)
         {
             var product = await _productRepository.GetByIdAsync(item.ProductId);
             if (product != null)
             {
-                // Satın alınan miktar kadar stoğu tekrar ürünün üstüne ekliyoruz
                 product.Quantity += item.Quantity;
                 _productRepository.Update(product);
             }

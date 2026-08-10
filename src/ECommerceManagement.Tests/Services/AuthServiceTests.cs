@@ -20,7 +20,7 @@ public class AuthServiceTests
     private readonly Mock<IGenericRepository<UserRole>> _mockUserRoleRepo;
     private readonly Mock<ITokenService> _mockTokenService;
     private readonly Mock<IUnitOfWork> _mockUow;
-    private readonly IMapper _mapper; // EKLENDİ
+    private readonly IMapper _mapper;
     private readonly AuthService _authService;
 
     public AuthServiceTests()
@@ -34,7 +34,6 @@ public class AuthServiceTests
 
         var services = new ServiceCollection();
         
-        // ÇÖZÜM: AutoMapper'ın arka planda ihtiyaç duyduğu loglama altyapısını test konteynerine ekliyoruz.
         services.AddLogging(); 
         
         services.AddAutoMapper(config => 

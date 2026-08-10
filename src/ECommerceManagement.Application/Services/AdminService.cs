@@ -34,10 +34,7 @@ public class AdminService : IAdminService
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
-
-    // ==========================================
-    // KATEGORİ YÖNETİMİ
-    // ==========================================
+    
     public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
     {
         var categories = await _categoryRepository.GetAllAsync();
@@ -50,10 +47,7 @@ public class AdminService : IAdminService
         await _categoryRepository.AddAsync(category);
         await _unitOfWork.SaveChangesAsync();
     }
-
-    // ==========================================
-    // DEPO (WAREHOUSE) YÖNETİMİ
-    // ==========================================
+    
     public async Task<IEnumerable<WarehouseDto>> GetAllWarehousesAsync()
     {
         var warehouses = await _warehouseRepository.GetAllAsync();
@@ -67,10 +61,7 @@ public class AdminService : IAdminService
         await _warehouseRepository.AddAsync(warehouse);
         await _unitOfWork.SaveChangesAsync();
     }
-
-    // ==========================================
-    // SÜPER ADMIN - ROL ATAMA YÖNETİMİ
-    // ==========================================
+    
     public async Task AssignRoleToUserAsync(AssignRoleDto dto)
     {
         var existingRoles = await _userRoleRepository.GetAllAsync();
@@ -82,14 +73,11 @@ public class AdminService : IAdminService
             await _userRoleRepository.AddAsync(userRole);
             await _unitOfWork.SaveChangesAsync();
 
-            // Rol değiştiği için kullanıcının Redis önbelleğini (Cache) temizle
             await _cache.RemoveAsync($"permissions_user_{dto.UserId}");
         }
     }
 
-    // ==========================================
-    // SÜPER ADMIN - ÖZEL YETKİ EZME (OVERRIDE)
-    // ==========================================
+
     public async Task AssignPermissionToUserAsync(AssignUserPermissionDto dto)
     {
         var existingPermissions = await _userPermissionRepository.GetAllAsync();
@@ -97,13 +85,11 @@ public class AdminService : IAdminService
 
         if (userPerm != null)
         {
-            // Varsa güncelle
             userPerm.IsGranted = dto.IsGranted;
             _userPermissionRepository.Update(userPerm);
         }
         else
         {
-            // Yoksa yeni oluştur
             var newPerm = new UserPermission
             {
                 UserId = dto.UserId,
@@ -115,7 +101,6 @@ public class AdminService : IAdminService
 
         await _unitOfWork.SaveChangesAsync();
 
-        // Kullanıcının özel yetkisi değiştiği için Redis önbelleğini (Cache) temizle
         await _cache.RemoveAsync($"permissions_user_{dto.UserId}");
     }
 }

@@ -8,8 +8,7 @@ namespace ECommerceManagement.Repository.Context;
 public class ECommerceDbContext : DbContext
 {
     public ECommerceDbContext(DbContextOptions<ECommerceDbContext> options) : base(options) { }
-
-    // DbSets...
+    
     public DbSet<User> Users { get; set; } = null!;
     public DbSet<Role> Roles { get; set; } = null!;
     public DbSet<Permission> Permissions { get; set; } = null!;
@@ -33,7 +32,6 @@ public class ECommerceDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // 1. ANAHTARLAR VE İLİŞKİLER (Değişmedi, kusursuzdu)
         modelBuilder.Entity<UserRole>().HasKey(ur => new { ur.UserId, ur.RoleId });
         modelBuilder.Entity<RolePermission>().HasKey(rp => new { rp.RoleId, rp.PermissionId });
         modelBuilder.Entity<UserPermission>().HasKey(up => new { up.UserId, up.PermissionId });
@@ -70,7 +68,7 @@ public class ECommerceDbContext : DbContext
             new Role { Id = 4, Name = AppRoles.Customer, CreatedAt = seedDate }
         );
 
-        // 2. YETKİ HAVUZU (Constants'dan çekiliyor)
+        // 2. YETKİ HAVUZU
         modelBuilder.Entity<Permission>().HasData(
             new Permission { Id = 1, Name = AppPermissions.ManageRoles, ModuleName = "Users", CreatedAt = seedDate },
             new Permission { Id = 2, Name = AppPermissions.ManagePermissions, ModuleName = "Users", CreatedAt = seedDate },
@@ -97,7 +95,7 @@ public class ECommerceDbContext : DbContext
             new RolePermission { RoleId = 4, PermissionId = 4 }
         );
 
-        // 4. TEK BİR SUPER ADMIN (Güvenli Hash ile)
+        // 4. TEK BİR SUPER ADMIN
         var superAdmin = new User 
         { 
             Id = 1, 

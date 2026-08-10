@@ -37,7 +37,7 @@ public class ProductMovement : BaseEntity
     public int ProductId { get; set; }
     public MovementType MovementType { get; set; }
     public int Quantity { get; set; }
-    public int? ReferenceId { get; set; } // Sipariş ID vb.
+    public int? ReferenceId { get; set; }
 
     public Product Product { get; set; } = null!;
 }

@@ -7,7 +7,7 @@ public class Invoice : BaseEntity
 {
     public int OrderId { get; set; }
     public int SellerId { get; set; }
-    public string CustomerName { get; set; } = string.Empty; // Anlık görüntü (Snapshot)
+    public string CustomerName { get; set; } = string.Empty; 
     public string? InvoiceNumber { get; set; }
     public decimal TotalAmount { get; set; }
     

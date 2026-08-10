@@ -8,7 +8,6 @@ public class ProductDto
     public decimal Price { get; set; }
     public int Quantity { get; set; }
     
-    // İlişkisel verilerin sadece ihtiyaç duyulan kısımları (Entity'leri dışarı açmıyoruz)
     public int SellerId { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;

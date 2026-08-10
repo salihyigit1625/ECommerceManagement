@@ -7,7 +7,7 @@ public class InvoiceDto
     public int Id { get; set; }
     public int OrderId { get; set; }
     public string? InvoiceNumber { get; set; }
-    public string CustomerName { get; set; } = string.Empty; // Snapshot
+    public string CustomerName { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public InvoiceStatus Status { get; set; }
     public AxIntegrationStatus AxIntegrationStatus { get; set; }

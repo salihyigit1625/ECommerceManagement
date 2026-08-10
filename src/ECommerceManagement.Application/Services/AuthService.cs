@@ -36,16 +36,12 @@ public class AuthService : IAuthService
         _mapper = mapper;
     }
 
-    // ==========================================
-    // 1. MÜŞTERİ KAYIT
-    // ==========================================
     public async Task<TokenResponseDto> RegisterCustomerAsync(CustomerRegisterDto dto)
     {
         var existingUsers = await _userRepository.GetAllAsync();
         if (existingUsers.Any(u => u.Email == dto.Email))
             throw new InvalidOperationException("Bu e-posta adresi ile zaten bir kayıt mevcut.");
 
-        // DTO'dan User varlığına AutoMapper ile otomatik dönüşüm
         var user = _mapper.Map<User>(dto);
         user.CreatedAt = DateTime.UtcNow;
         user.IsActive = true;
@@ -54,7 +50,6 @@ public class AuthService : IAuthService
         await _userRepository.AddAsync(user);
         await _unitOfWork.SaveChangesAsync(); 
 
-        // DTO'dan Customer varlığına AutoMapper ile otomatik dönüşüm
         var customer = _mapper.Map<Customer>(dto);
         customer.UserId = user.Id;
         customer.CreatedAt = DateTime.UtcNow;
@@ -69,16 +64,12 @@ public class AuthService : IAuthService
         return await GenerateTokensForUserAsync(user, AppRoles.Customer);
     }
 
-    // ==========================================
-    // 2. SATICI KAYIT
-    // ==========================================
     public async Task<TokenResponseDto> RegisterSellerAsync(SellerRegisterDto dto)
     {
         var existingUsers = await _userRepository.GetAllAsync();
         if (existingUsers.Any(u => u.Email == dto.Email))
             throw new InvalidOperationException("Bu e-posta adresi ile zaten bir kayıt mevcut.");
 
-        // DTO'dan User varlığına AutoMapper ile otomatik dönüşüm
         var user = _mapper.Map<User>(dto);
         user.CreatedAt = DateTime.UtcNow;
         user.IsActive = true;
@@ -87,7 +78,6 @@ public class AuthService : IAuthService
         await _userRepository.AddAsync(user);
         await _unitOfWork.SaveChangesAsync(); 
 
-        // DTO'dan Seller varlığına AutoMapper ile otomatik dönüşüm
         var seller = _mapper.Map<Seller>(dto);
         seller.UserId = user.Id;
         seller.CreatedAt = DateTime.UtcNow;
@@ -102,9 +92,6 @@ public class AuthService : IAuthService
         return await GenerateTokensForUserAsync(user, AppRoles.Seller);
     }
 
-    // ==========================================
-    // 3. ORTAK LOGİN
-    // ==========================================
     public async Task<TokenResponseDto> LoginAsync(LoginDto dto)
     {
         var users = await _userRepository.GetAllAsync();
@@ -113,7 +100,6 @@ public class AuthService : IAuthService
         if (user == null || !user.IsActive)
             throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
 
-        // Şifre doğrulama
         if (user.PasswordHash != dto.Password)
         {
             var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
@@ -123,7 +109,6 @@ public class AuthService : IAuthService
 
         string role;
         
-        // ADMIN VE SUPERADMIN KONTROLÜ
         if (user.Email == "superadmin@sistem.com") 
         {
             role = AppRoles.SuperAdmin;
@@ -142,9 +127,6 @@ public class AuthService : IAuthService
         return await GenerateTokensForUserAsync(user, role);
     }
 
-    // ==========================================
-    // 4. REFRESH TOKEN
-    // ==========================================
     public async Task<TokenResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
     {
         var users = await _userRepository.GetAllAsync();
@@ -173,9 +155,6 @@ public class AuthService : IAuthService
         return await GenerateTokensForUserAsync(user, role);
     }
 
-    // ==========================================
-    // YARDIMCI METOTLAR
-    // ==========================================
     private async Task<TokenResponseDto> GenerateTokensForUserAsync(User user, string role)
     {
         var accessToken = _tokenService.GenerateAccessToken(user, new List<string> { role });

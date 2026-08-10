@@ -21,7 +21,6 @@ public class SellerRegisterDtoValidator : AbstractValidator<SellerRegisterDto>
             .Matches("[A-Z]").WithMessage("Şifre en az bir büyük harf içermelidir.")
             .Matches("[0-9]").WithMessage("Şifre en az bir rakam içermelidir.");
 
-        // Satıcıya özel alanlar
         RuleFor(x => x.CompanyName)
             .NotEmpty().WithMessage("Şirket adı alanı zorunludur.");
 

@@ -18,7 +18,6 @@ public class CatalogService : ICatalogService
 
     public async Task<IEnumerable<ProductDto>> GetActiveProductsAsync()
     {
-        // İlişkili tablolardan verileri Include ile çekiyoruz
         var products = await _productRepository.GetAllAsync(
             p => p.Category, 
             p => p.Seller, 
