@@ -1,3 +1,6 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using ECommerceManagement.Application.Validations.Auth;
 using System.Text;
 using ECommerceManagement.Application.Interfaces;
 using ECommerceManagement.Application.Mappings;
@@ -22,6 +25,11 @@ builder.Services.AddAutoMapper(config =>
 {
     config.AddProfile<MappingProfile>();
 });
+// FluentValidation'ı sisteme dahil et ve otomatik doğrulamayı aç
+builder.Services.AddFluentValidationAutoValidation();
+// Yazdığımız tüm Validator sınıflarını otomatik bulup sisteme kaydet
+builder.Services.AddValidatorsFromAssemblyContaining<CustomerRegisterDtoValidator>();
+
 // --- JWT & AUTHENTICATION SERVİSLERİ ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];
