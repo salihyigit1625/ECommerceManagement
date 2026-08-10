@@ -1,3 +1,4 @@
+using AutoMapper;
 using ECommerceManagement.Application.DTOs.Catalog;
 using ECommerceManagement.Application.Interfaces;
 using ECommerceManagement.Domain.Entities;
@@ -8,11 +9,13 @@ public class ProductService : IProductService
 {
     private readonly IGenericRepository<Product> _productRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
-    public ProductService(IGenericRepository<Product> productRepository, IUnitOfWork unitOfWork)
+    public ProductService(IGenericRepository<Product> productRepository, IUnitOfWork unitOfWork, IMapper mapper)
     {
         _productRepository = productRepository;
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     public async Task<IEnumerable<SellerProductDto>> GetProductsBySellerIdAsync(int sellerId)
@@ -23,20 +26,8 @@ public class ProductService : IProductService
             p => p.Warehouse
         );
 
-        return products
-            .Where(p => p.SellerId == sellerId)
-            .Select(p => new SellerProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Sku = p.Sku,
-                Price = p.Price,
-                Quantity = p.Quantity,
-                SellerId = p.SellerId,
-                CategoryName = p.Category?.Name ?? string.Empty,
-                WarehouseName = p.Warehouse?.Name ?? string.Empty,
-                IsActive = p.IsActive
-            });
+        var sellerProducts = products.Where(p => p.SellerId == sellerId);
+        return _mapper.Map<IEnumerable<SellerProductDto>>(sellerProducts);
     }
 
     public async Task<ProductDto?> GetByIdAsync(int id)
@@ -44,15 +35,7 @@ public class ProductService : IProductService
         var product = await _productRepository.GetByIdAsync(id);
         if (product == null || !product.IsActive) return null;
 
-        return new ProductDto
-        {
-            Id = product.Id,
-            SellerId = product.SellerId,
-            Name = product.Name,
-            Sku = product.Sku,
-            Price = product.Price,
-            Quantity = product.Quantity
-        };
+        return _mapper.Map<ProductDto>(product);
     }
 
     public async Task AddAsync(CreateProductDto dto)
@@ -64,17 +47,8 @@ public class ProductService : IProductService
         if (dto.Quantity < 0)
             throw new InvalidOperationException("Stok miktarı negatif olamaz.");
 
-        var product = new Product
-        {
-            SellerId = dto.SellerId,
-            CategoryId = dto.CategoryId,
-            WarehouseId = dto.WarehouseId,
-            Name = dto.Name,
-            Sku = dto.Sku,
-            Price = dto.Price,
-            Quantity = dto.Quantity,
-            IsActive = true
-        };
+        var product = _mapper.Map<Product>(dto);
+        product.IsActive = true;
 
         await _productRepository.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
@@ -92,9 +66,8 @@ public class ProductService : IProductService
         if (dto.Quantity < 0)
             throw new InvalidOperationException("Stok miktarı negatif olamaz.");
 
-        product.Price = dto.Price;
-        product.Quantity = dto.Quantity;
-        product.IsActive = dto.IsActive;
+        // DTO'daki yeni değerleri var olan Entity'nin üzerine otomatik yazar
+        _mapper.Map(dto, product);
         product.UpdatedAt = DateTime.UtcNow;
 
         _productRepository.Update(product);

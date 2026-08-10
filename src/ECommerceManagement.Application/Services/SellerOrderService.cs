@@ -1,3 +1,4 @@
+using AutoMapper;
 using ECommerceManagement.Application.DTOs.Invoices;
 using ECommerceManagement.Application.DTOs.Orders;
 using ECommerceManagement.Application.Interfaces;
@@ -13,31 +14,32 @@ public class SellerOrderService : ISellerOrderService
     private readonly IGenericRepository<Customer> _customerRepository;
     private readonly IGenericRepository<Product> _productRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
     public SellerOrderService(
         IGenericRepository<Order> orderRepository,
         IGenericRepository<Invoice> invoiceRepository,
         IGenericRepository<Customer> customerRepository,
         IGenericRepository<Product> productRepository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
     {
         _orderRepository = orderRepository;
         _invoiceRepository = invoiceRepository;
         _customerRepository = customerRepository;
         _productRepository = productRepository;
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     // 1. Satıcı sadece kendisine gelen Pending siparişleri listeler
     public async Task<IEnumerable<OrderDto>> GetPendingOrdersAsync(int sellerId)
     {
-        // 1. Siparişleri, müşteriyi ve sipariş kalemlerini Include ile çekiyoruz
         var orders = await _orderRepository.GetAllAsync(
             o => o.Customer, 
             o => o.OrderItems
         );
 
-        // 2. Ürün adlarını eşleştirmek için ürünleri sözlüğe (Dictionary) alıyoruz
         var products = await _productRepository.GetAllAsync();
         var productDict = products.ToDictionary(p => p.Id, p => p.Name);
 
@@ -47,13 +49,11 @@ public class SellerOrderService : ISellerOrderService
             {
                 Id = o.Id,
                 CustomerId = o.CustomerId,
-                // Müşteri ad soyad bilgisini dolduruyoruz
                 CustomerFullName = o.Customer != null ? $"{o.Customer.FirstName} {o.Customer.LastName}" : string.Empty,
                 SellerId = o.SellerId,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status,
                 CreatedAt = o.CreatedAt,
-                // Sipariş kalemlerini ve ürün adlarını dolduruyoruz
                 Items = o.OrderItems.Select(item => new OrderItemDto
                 {
                     ProductId = item.ProductId,
@@ -75,7 +75,6 @@ public class SellerOrderService : ISellerOrderService
         if (order.Status != OrderStatus.Pending)
             throw new InvalidOperationException("Sadece 'Pending' durumundaki siparişlere fatura kesilebilir.");
 
-        // Müşteri adını anlık görüntü (Snapshot) olarak çekiyoruz
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId);
         string customerFullName = customer != null ? $"{customer.FirstName} {customer.LastName}" : "Bilinmeyen Müşteri";
 
@@ -93,17 +92,7 @@ public class SellerOrderService : ISellerOrderService
         await _invoiceRepository.AddAsync(invoice);
         await _unitOfWork.SaveChangesAsync();
 
-        return new InvoiceDto
-        {
-            Id = invoice.Id,
-            OrderId = invoice.OrderId,
-            InvoiceNumber = invoice.InvoiceNumber,
-            CustomerName = invoice.CustomerName,
-            TotalAmount = invoice.TotalAmount,
-            Status = invoice.Status,
-            AxIntegrationStatus = invoice.AxIntegrationStatus,
-            CreatedAt = invoice.CreatedAt
-        };
+        return _mapper.Map<InvoiceDto>(invoice);
     }
 
     // 3. Faturayı Onaylama (InvoiceStatus = Confirmed, OrderStatus = Invoiced)
@@ -120,7 +109,6 @@ public class SellerOrderService : ISellerOrderService
         if (order == null)
             throw new KeyNotFoundException("Faturaya ait sipariş bulunamadı.");
 
-        // Durum güncellemeleri
         invoice.Status = InvoiceStatus.Confirmed;
         order.Status = OrderStatus.Invoiced;
         order.UpdatedAt = DateTime.UtcNow;
@@ -162,7 +150,6 @@ public class SellerOrderService : ISellerOrderService
         order.UpdatedAt = DateTime.UtcNow;
         _orderRepository.Update(order);
 
-        // Varsa faturayı da iptal et
         var allInvoices = await _invoiceRepository.GetAllAsync();
         var invoice = allInvoices.FirstOrDefault(i => i.OrderId == orderId);
         if (invoice != null)
@@ -186,7 +173,7 @@ public class SellerOrderService : ISellerOrderService
         var productDict = products.ToDictionary(p => p.Id, p => p.Name);
 
         return orders
-            .Where(o => o.SellerId == sellerId) // Status filtresi yok, hepsi geliyor!
+            .Where(o => o.SellerId == sellerId)
             .Select(o => new OrderDto
             {
                 Id = o.Id,
@@ -211,20 +198,8 @@ public class SellerOrderService : ISellerOrderService
     public async Task<IEnumerable<InvoiceDto>> GetInvoicesBySellerIdAsync(int sellerId)
     {
         var invoices = await _invoiceRepository.GetAllAsync();
-
-        return invoices
-            .Where(i => i.SellerId == sellerId)
-            .Select(i => new InvoiceDto
-            {
-                Id = i.Id,
-                OrderId = i.OrderId,
-                InvoiceNumber = i.InvoiceNumber,
-                CustomerName = i.CustomerName,
-                TotalAmount = i.TotalAmount,
-                Status = i.Status,
-                AxIntegrationStatus = i.AxIntegrationStatus,
-                CreatedAt = i.CreatedAt
-            });
+        var sellerInvoices = invoices.Where(i => i.SellerId == sellerId);
+        
+        return _mapper.Map<IEnumerable<InvoiceDto>>(sellerInvoices);
     }
-    
 }

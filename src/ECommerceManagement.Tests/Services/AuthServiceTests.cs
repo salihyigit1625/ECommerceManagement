@@ -1,10 +1,13 @@
+using AutoMapper; // EKLENDİ
 using ECommerceManagement.Application.DTOs.Auth;
 using ECommerceManagement.Application.Interfaces;
+using ECommerceManagement.Application.Mappings; // EKLENDİ
 using ECommerceManagement.Application.Services;
 using ECommerceManagement.Domain.Constants;
 using ECommerceManagement.Domain.Entities;
 using FluentAssertions;
 using Moq;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace ECommerceManagement.Tests.Services;
@@ -17,11 +20,11 @@ public class AuthServiceTests
     private readonly Mock<IGenericRepository<UserRole>> _mockUserRoleRepo;
     private readonly Mock<ITokenService> _mockTokenService;
     private readonly Mock<IUnitOfWork> _mockUow;
+    private readonly IMapper _mapper; // EKLENDİ
     private readonly AuthService _authService;
 
     public AuthServiceTests()
     {
-        // Bağımlılıkların (Veritabanı, Token Servisi vb.) sahtelerini (mock) üretiyoruz.
         _mockUserRepo = new Mock<IGenericRepository<User>>();
         _mockCustomerRepo = new Mock<IGenericRepository<Customer>>();
         _mockSellerRepo = new Mock<IGenericRepository<Seller>>();
@@ -29,13 +32,27 @@ public class AuthServiceTests
         _mockTokenService = new Mock<ITokenService>();
         _mockUow = new Mock<IUnitOfWork>();
 
+        var services = new ServiceCollection();
+        
+        // ÇÖZÜM: AutoMapper'ın arka planda ihtiyaç duyduğu loglama altyapısını test konteynerine ekliyoruz.
+        services.AddLogging(); 
+        
+        services.AddAutoMapper(config => 
+        {
+            config.AddProfile<MappingProfile>();
+        });
+        
+        var serviceProvider = services.BuildServiceProvider();
+        _mapper = serviceProvider.GetRequiredService<IMapper>();
+
         _authService = new AuthService(
             _mockUserRepo.Object,
             _mockCustomerRepo.Object,
             _mockSellerRepo.Object,
             _mockUserRoleRepo.Object,
             _mockTokenService.Object,
-            _mockUow.Object
+            _mockUow.Object,
+            _mapper 
         );
     }
 

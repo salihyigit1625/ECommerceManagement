@@ -1,5 +1,6 @@
 using System.Text;
 using ECommerceManagement.Application.Interfaces;
+using ECommerceManagement.Application.Mappings;
 using ECommerceManagement.Application.Services;
 using ECommerceManagement.Infrastructure.Security;
 using ECommerceManagement.Infrastructure.Services;
@@ -17,7 +18,10 @@ var builder = WebApplication.CreateBuilder(args);
 // 1. SERVİS KAYITLARI
 // ==========================================
 builder.Services.AddControllers();
-
+builder.Services.AddAutoMapper(config => 
+{
+    config.AddProfile<MappingProfile>();
+});
 // --- JWT & AUTHENTICATION SERVİSLERİ ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"];

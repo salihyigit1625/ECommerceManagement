@@ -13,9 +13,14 @@
 
     <ItemGroup>
       <PackageReference Include="AutoMapper" Version="16.2.0" />
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
       <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.10" />
       <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.10" />
       <PackageReference Include="Microsoft.OpenApi" Version="3.9.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Validations\" />
     </ItemGroup>
 
 </Project>

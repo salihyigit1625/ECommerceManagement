@@ -1,3 +1,4 @@
+using AutoMapper;
 using ECommerceManagement.Domain.Constants;
 using ECommerceManagement.Application.DTOs.Auth;
 using ECommerceManagement.Application.Interfaces;
@@ -11,18 +12,20 @@ public class AuthService : IAuthService
     private readonly IGenericRepository<User> _userRepository;
     private readonly IGenericRepository<Customer> _customerRepository;
     private readonly IGenericRepository<Seller> _sellerRepository;
-    private readonly IGenericRepository<UserRole> _userRoleRepository; // Sisteme eklendi
+    private readonly IGenericRepository<UserRole> _userRoleRepository;
     private readonly ITokenService _tokenService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
     private readonly PasswordHasher<User> _passwordHasher = new();
 
     public AuthService(
         IGenericRepository<User> userRepository,
         IGenericRepository<Customer> customerRepository,
         IGenericRepository<Seller> sellerRepository,
-        IGenericRepository<UserRole> userRoleRepository, // Sisteme eklendi
+        IGenericRepository<UserRole> userRoleRepository,
         ITokenService tokenService,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
     {
         _userRepository = userRepository;
         _customerRepository = customerRepository;
@@ -30,6 +33,7 @@ public class AuthService : IAuthService
         _userRoleRepository = userRoleRepository;
         _tokenService = tokenService;
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     // ==========================================
@@ -41,23 +45,22 @@ public class AuthService : IAuthService
         if (existingUsers.Any(u => u.Email == dto.Email))
             throw new InvalidOperationException("Bu e-posta adresi ile zaten bir kayıt mevcut.");
 
-        var user = new User { Username = dto.Username, Email = dto.Email, CreatedAt = DateTime.UtcNow, IsActive = true };
+        // DTO'dan User varlığına AutoMapper ile otomatik dönüşüm
+        var user = _mapper.Map<User>(dto);
+        user.CreatedAt = DateTime.UtcNow;
+        user.IsActive = true;
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
 
         await _userRepository.AddAsync(user);
         await _unitOfWork.SaveChangesAsync(); 
 
-        // Profil Oluşturma
-        var customer = new Customer
-        {
-            UserId = user.Id,
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            CreatedAt = DateTime.UtcNow
-        };
+        // DTO'dan Customer varlığına AutoMapper ile otomatik dönüşüm
+        var customer = _mapper.Map<Customer>(dto);
+        customer.UserId = user.Id;
+        customer.CreatedAt = DateTime.UtcNow;
         await _customerRepository.AddAsync(customer);
 
-        // KRİTİK DÜZELTME: Kullanıcıya Veritabanında Rol Atama (Id: 4 -> Customer)
+        // Kullanıcıya Veritabanında Rol Atama (Id: 4 -> Customer)
         var userRole = new UserRole { UserId = user.Id, RoleId = 4 };
         await _userRoleRepository.AddAsync(userRole);
         
@@ -75,24 +78,22 @@ public class AuthService : IAuthService
         if (existingUsers.Any(u => u.Email == dto.Email))
             throw new InvalidOperationException("Bu e-posta adresi ile zaten bir kayıt mevcut.");
 
-        var user = new User { Username = dto.Username, Email = dto.Email, CreatedAt = DateTime.UtcNow, IsActive = true };
+        // DTO'dan User varlığına AutoMapper ile otomatik dönüşüm
+        var user = _mapper.Map<User>(dto);
+        user.CreatedAt = DateTime.UtcNow;
+        user.IsActive = true;
         user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
 
         await _userRepository.AddAsync(user);
         await _unitOfWork.SaveChangesAsync(); 
 
-        // Profil Oluşturma
-        var seller = new Seller
-        {
-            UserId = user.Id,
-            CompanyName = dto.CompanyName,
-            TaxNumber = dto.TaxNumber,
-            ContactEmail = dto.Email,
-            CreatedAt = DateTime.UtcNow
-        };
+        // DTO'dan Seller varlığına AutoMapper ile otomatik dönüşüm
+        var seller = _mapper.Map<Seller>(dto);
+        seller.UserId = user.Id;
+        seller.CreatedAt = DateTime.UtcNow;
         await _sellerRepository.AddAsync(seller);
 
-        // KRİTİK DÜZELTME: Kullanıcıya Veritabanında Rol Atama (Id: 3 -> Seller)
+        // Kullanıcıya Veritabanında Rol Atama (Id: 3 -> Seller)
         var userRole = new UserRole { UserId = user.Id, RoleId = 3 };
         await _userRoleRepository.AddAsync(userRole);
         
@@ -122,7 +123,7 @@ public class AuthService : IAuthService
 
         string role;
         
-        // ADMIN VE SUPERADMIN KONTROLÜ (Sihirli metinler düzeltildi)
+        // ADMIN VE SUPERADMIN KONTROLÜ
         if (user.Email == "superadmin@sistem.com") 
         {
             role = AppRoles.SuperAdmin;
@@ -154,7 +155,6 @@ public class AuthService : IAuthService
 
         string role;
         
-        // Sihirli metinler düzeltildi
         if (user.Email == "superadmin@sistem.com") 
         {
             role = AppRoles.SuperAdmin;
@@ -173,7 +173,9 @@ public class AuthService : IAuthService
         return await GenerateTokensForUserAsync(user, role);
     }
 
-    // Ortak token üretme metodu
+    // ==========================================
+    // YARDIMCI METOTLAR
+    // ==========================================
     private async Task<TokenResponseDto> GenerateTokensForUserAsync(User user, string role)
     {
         var accessToken = _tokenService.GenerateAccessToken(user, new List<string> { role });

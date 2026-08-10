@@ -1,3 +1,4 @@
+using AutoMapper;
 using ECommerceManagement.Application.DTOs.Auth;
 using ECommerceManagement.Application.DTOs.Catalog;
 using ECommerceManagement.Application.Interfaces;
@@ -14,6 +15,7 @@ public class AdminService : IAdminService
     private readonly IGenericRepository<UserPermission> _userPermissionRepository;
     private readonly IDistributedCache _cache;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
 
     public AdminService(
         IGenericRepository<Category> categoryRepository,
@@ -21,7 +23,8 @@ public class AdminService : IAdminService
         IGenericRepository<UserRole> userRoleRepository,
         IGenericRepository<UserPermission> userPermissionRepository,
         IDistributedCache cache,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
     {
         _categoryRepository = categoryRepository;
         _warehouseRepository = warehouseRepository;
@@ -29,6 +32,7 @@ public class AdminService : IAdminService
         _userPermissionRepository = userPermissionRepository;
         _cache = cache;
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     // ==========================================
@@ -37,21 +41,12 @@ public class AdminService : IAdminService
     public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
     {
         var categories = await _categoryRepository.GetAllAsync();
-        return categories.Select(c => new CategoryDto
-        {
-            Id = c.Id,
-            Name = c.Name,
-            ParentCategoryId = c.ParentCategoryId
-        });
+        return _mapper.Map<IEnumerable<CategoryDto>>(categories);
     }
 
     public async Task CreateCategoryAsync(CreateCategoryDto dto)
     {
-        var category = new Category
-        {
-            Name = dto.Name,
-            ParentCategoryId = dto.ParentCategoryId
-        };
+        var category = _mapper.Map<Category>(dto);
         await _categoryRepository.AddAsync(category);
         await _unitOfWork.SaveChangesAsync();
     }
@@ -62,22 +57,13 @@ public class AdminService : IAdminService
     public async Task<IEnumerable<WarehouseDto>> GetAllWarehousesAsync()
     {
         var warehouses = await _warehouseRepository.GetAllAsync();
-        return warehouses.Select(w => new WarehouseDto
-        {
-            Id = w.Id,
-            Name = w.Name,
-            Location = w.Location
-        });
+        return _mapper.Map<IEnumerable<WarehouseDto>>(warehouses);
     }
 
     public async Task CreateWarehouseAsync(CreateWarehouseDto dto)
     {
-        var warehouse = new Warehouse
-        {
-            Name = dto.Name,
-            Location = dto.Location,
-            IsActive = true
-        };
+        var warehouse = _mapper.Map<Warehouse>(dto);
+        warehouse.IsActive = true;
         await _warehouseRepository.AddAsync(warehouse);
         await _unitOfWork.SaveChangesAsync();
     }
