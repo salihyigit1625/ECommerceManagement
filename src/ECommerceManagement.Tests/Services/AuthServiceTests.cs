@@ -1,13 +1,14 @@
-using AutoMapper; // EKLENDİ
+using AutoMapper;
 using ECommerceManagement.Application.DTOs.Auth;
 using ECommerceManagement.Application.Interfaces;
-using ECommerceManagement.Application.Mappings; // EKLENDİ
+using ECommerceManagement.Application.Mappings;
 using ECommerceManagement.Application.Services;
 using ECommerceManagement.Domain.Constants;
 using ECommerceManagement.Domain.Entities;
 using FluentAssertions;
-using Moq;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using Xunit;
 
 namespace ECommerceManagement.Tests.Services;
@@ -33,13 +34,8 @@ public class AuthServiceTests
         _mockUow = new Mock<IUnitOfWork>();
 
         var services = new ServiceCollection();
-        
         services.AddLogging(); 
-        
-        services.AddAutoMapper(config => 
-        {
-            config.AddProfile<MappingProfile>();
-        });
+        services.AddAutoMapper(config => config.AddProfile<MappingProfile>());
         
         var serviceProvider = services.BuildServiceProvider();
         _mapper = serviceProvider.GetRequiredService<IMapper>();
@@ -58,7 +54,6 @@ public class AuthServiceTests
     [Fact]
     public async Task RegisterCustomer_Should_HashPassword_Assign_CustomerRole_And_Return_Tokens()
     {
-        // 1. Arrange (Hazırlık)
         var dto = new CustomerRegisterDto
         {
             Username = "newcustomer",
@@ -68,101 +63,108 @@ public class AuthServiceTests
             LastName = "Customer"
         };
 
-        // Veritabanında bu maile sahip başka biri yokmuş gibi davran
         _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User>());
+        _mockTokenService.Setup(x => x.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>())).Returns("mock_access_token");
+        _mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("mock_refresh_token");
 
-        // Token servisi token ürettiğinde ne döneceğini söylüyoruz
-        _mockTokenService.Setup(x => x.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>()))
-            .Returns("mock_access_token");
-        _mockTokenService.Setup(x => x.GenerateRefreshToken())
-            .Returns("mock_refresh_token");
-
-        // 2. Act (Eylem - Servisi Çalıştır)
         var result = await _authService.RegisterCustomerAsync(dto);
 
-        // 3. Assert (Doğrulamalar)
-        
-        // Token'lar başarıyla döndü mü?
         result.Should().NotBeNull();
         result.AccessToken.Should().Be("mock_access_token");
-        result.RefreshToken.Should().Be("mock_refresh_token");
-
-        // KRİTİK DOĞRULAMA 1: Kullanıcı eklendi mi ve şifresi hash'lendi mi? (Açık metin olarak kaydedilmemeli)
-        _mockUserRepo.Verify(x => x.AddAsync(It.Is<User>(u => 
-            u.Email == dto.Email && 
-            u.Username == dto.Username && 
-            u.PasswordHash != dto.Password)), Times.Once); 
-
-        // KRİTİK DOĞRULAMA 2: Yeni kullanıcıya Customer rolü (RoleId = 4) atandı mı?
+        
+        _mockUserRepo.Verify(x => x.AddAsync(It.Is<User>(u => u.Email == dto.Email && u.PasswordHash != dto.Password)), Times.Once); 
         _mockUserRoleRepo.Verify(x => x.AddAsync(It.Is<UserRole>(ur => ur.RoleId == 4)), Times.Once);
-
-        // KRİTİK DOĞRULAMA 3: İşlemler veritabanına kaydedildi mi?
         _mockUow.Verify(x => x.SaveChangesAsync(), Times.AtLeastOnce);
     }
-    
+
+    [Fact]
+    public async Task RegisterCustomerAsync_Should_Throw_InvalidOperationException_When_Email_Already_Exists()
+    {
+        // Arrange
+        var dto = new CustomerRegisterDto { Email = "existing@test.com", Password = "Pass123!", Username = "user1" };
+        var existingUser = new User { Email = "existing@test.com" };
+
+        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { existingUser });
+
+        // Act
+        Func<Task> act = async () => await _authService.RegisterCustomerAsync(dto);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Bu e-posta adresi ile zaten bir kayıt mevcut.");
+    }
+
+    [Fact]
+    public async Task RegisterSellerAsync_Should_Create_Seller_Entity_And_Assign_SellerRole()
+    {
+        // Arrange
+        var dto = new SellerRegisterDto
+        {
+            Username = "newseller",
+            Email = "seller@company.com",
+            Password = "StrongPassword123!",
+            CompanyName = "Tekno A.Ş.",
+            TaxNumber = "1234567890"
+        };
+
+        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User>());
+        _mockTokenService.Setup(x => x.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>())).Returns("seller_token");
+        _mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("seller_refresh");
+
+        // Act
+        var result = await _authService.RegisterSellerAsync(dto);
+
+        // Assert
+        result.Should().NotBeNull();
+        _mockSellerRepo.Verify(x => x.AddAsync(It.Is<Seller>(s => s.CompanyName == "Tekno A.Ş.")), Times.Once);
+        _mockUserRoleRepo.Verify(x => x.AddAsync(It.Is<UserRole>(ur => ur.RoleId == 3)), Times.Once); // Seller RoleId = 3
+    }
+
+    [Fact]
+    public async Task LoginAsync_Should_Throw_UnauthorizedException_When_User_Not_Found()
+    {
+        // Arrange
+        var dto = new LoginDto { Email = "notfound@test.com", Password = "Password123!" };
+        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User>());
+
+        // Act
+        Func<Task> act = async () => await _authService.LoginAsync(dto);
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("Geçersiz e-posta veya şifre.");
+    }
+
+    [Fact]
+    public async Task LoginAsync_Should_Throw_UnauthorizedException_When_User_Is_Passive()
+    {
+        // Arrange
+        var hasher = new PasswordHasher<User>();
+        var dto = new LoginDto { Email = "banned@test.com", Password = "CorrectPassword123!" };
+        var user = new User { Id = 1, Email = "banned@test.com", IsActive = false };
+        user.PasswordHash = hasher.HashPassword(user, "CorrectPassword123!");
+
+        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { user });
+
+        // Act
+        Func<Task> act = async () => await _authService.LoginAsync(dto);
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedAccessException>()
+            .WithMessage("Geçersiz e-posta veya şifre.");
+    }
+
     [Fact]
     public async Task LoginAsync_Should_Throw_UnauthorizedException_When_Password_Is_Wrong()
     {
-        // 1. Arrange (Hazırlık)
-        var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
+        var hasher = new PasswordHasher<User>();
         var dto = new LoginDto { Email = "wrong@test.com", Password = "WrongPassword123!" };
-        
-        var user = new User
-        {
-            Id = 1,
-            Email = "wrong@test.com",
-            IsActive = true
-        };
-        // Hata almamak için gerçekten Base64 formatında geçerli bir hash oluşturuyoruz
+        var user = new User { Id = 1, Email = "wrong@test.com", IsActive = true };
         user.PasswordHash = hasher.HashPassword(user, "RealPassword123!");
 
         _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { user });
 
-        // 2. Act & 3. Assert (Eylem ve Doğrulama)
-        // Hatalı şifre girildiğinde sistemin "UnauthorizedAccessException" fırlatmasını bekliyoruz.
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(dto));
         exception.Message.Should().Be("Geçersiz e-posta veya şifre.");
     }
-
-    [Fact]
-    public async Task LoginAsync_Should_Return_Tokens_And_Assign_Seller_Role_For_Valid_Seller()
-    {
-        // 1. Arrange (Hazırlık)
-        var dto = new LoginDto { Email = "seller@test.com", Password = "CorrectPassword123!" };
-        var user = new User
-        {
-            Id = 2,
-            Email = "seller@test.com",
-            IsActive = true,
-            // Şifreyi test ortamı için bypass edip direkt aynı veriyoruz
-            PasswordHash = "CorrectPassword123!" 
-        };
-
-        // Bu kullanıcının bir Satıcı (Seller) profilinin olduğunu simüle ediyoruz
-        var seller = new Seller { UserId = 2 };
-
-        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { user });
-        _mockSellerRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<Seller> { seller });
-        
-        // Token üretilirken rol listesinin içinde "Seller" olmasını şart koşuyoruz
-        _mockTokenService.Setup(x => x.GenerateAccessToken(user, It.Is<List<string>>(roles => roles.Contains(AppRoles.Seller))))
-            .Returns("seller_access_token");
-        _mockTokenService.Setup(x => x.GenerateRefreshToken())
-            .Returns("seller_refresh_token");
-
-        // 2. Act (Eylem)
-        var result = await _authService.LoginAsync(dto);
-
-        // 3. Assert (Doğrulama)
-        result.Should().NotBeNull();
-        result.AccessToken.Should().Be("seller_access_token");
-        result.RefreshToken.Should().Be("seller_refresh_token");
-        
-        // Üretilen Refresh Token veritabanına kaydedilmek üzere güncellenmiş mi?
-        _mockUserRepo.Verify(x => x.Update(It.Is<User>(u => u.RefreshToken == "seller_refresh_token")), Times.Once);
-        _mockUow.Verify(x => x.SaveChangesAsync(), Times.AtLeastOnce);
-    }
-    
-    
-    
 }

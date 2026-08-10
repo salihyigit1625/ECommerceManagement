@@ -56,11 +56,11 @@ public class ECommerceDbContext : DbContext
         }
         
         // ==========================================
-        // SEED DATA (SADECE SİSTEM GEREKSİNİMLERİ)
+        // SEED DATA (SADECE SİSTEM ROLLERİ VE PERMISSION'LARI)
         // ==========================================
         var seedDate = new DateTime(2026, 8, 9, 0, 0, 0, DateTimeKind.Utc);
 
-        // 1. ROLLER (Sabit Kurallar)
+        // 1. ROLLER
         modelBuilder.Entity<Role>().HasData(
             new Role { Id = 1, Name = AppRoles.SuperAdmin, CreatedAt = seedDate },
             new Role { Id = 2, Name = AppRoles.Admin, CreatedAt = seedDate },
@@ -94,19 +94,5 @@ public class ECommerceDbContext : DbContext
             new RolePermission { RoleId = 4, PermissionId = 9 }, 
             new RolePermission { RoleId = 4, PermissionId = 4 }
         );
-
-        // 4. TEK BİR SUPER ADMIN
-        var superAdmin = new User 
-        { 
-            Id = 1, 
-            Username = "superadmin", 
-            Email = "superadmin@sistem.com", 
-            PasswordHash = "SuperAdmin123!",
-            IsActive = true, 
-            CreatedAt = seedDate 
-        };
-        
-        modelBuilder.Entity<User>().HasData(superAdmin);
-        modelBuilder.Entity<UserRole>().HasData(new UserRole { UserId = 1, RoleId = 1 });
     }
 }

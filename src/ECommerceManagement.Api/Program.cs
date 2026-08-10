@@ -16,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models; 
 using Serilog;
 using System.Threading.RateLimiting;
+using ECommerceManagement.Repository.Seed;
 using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -152,6 +153,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 //UYGULAMANIN İNŞASI (BUILD)
 var app = builder.Build();
 
+
 //serilog middleware
 app.UseSerilogRequestLogging();
 
@@ -175,5 +177,14 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// ==========================================
+// DB SEEDING ON STARTUP
+// ==========================================
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ECommerceDbContext>();
+    await DbInitializer.SeedAsync(dbContext);
+}
 
 app.Run();

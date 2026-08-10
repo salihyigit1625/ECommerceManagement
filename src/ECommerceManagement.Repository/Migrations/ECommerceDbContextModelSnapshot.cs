@@ -677,17 +677,6 @@ namespace ECommerceManagement.Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2026, 8, 9, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Email = "superadmin@sistem.com",
-                            IsActive = true,
-                            PasswordHash = "SuperAdmin123!",
-                            Username = "superadmin"
-                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.UserPermission", b =>
@@ -721,13 +710,6 @@ namespace ECommerceManagement.Repository.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRoles");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 1,
-                            RoleId = 1
-                        });
                 });
 
             modelBuilder.Entity("ECommerceManagement.Domain.Entities.Warehouse", b =>
