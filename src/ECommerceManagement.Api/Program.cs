@@ -14,8 +14,14 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models; 
+using Serilog;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));
 
 // ==========================================
 // 1. SERVİS KAYITLARI
@@ -29,6 +35,33 @@ builder.Services.AddAutoMapper(config =>
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<CustomerRegisterDtoValidator>();
+
+// ==========================================
+// RATE LIMITING CONFIGURATION
+// ==========================================
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // 1. Hassas Noktalar (Auth / Login / Register) İçin Katı Limit (Fixed Window)
+    // 1 dakikada aynı IP'den en fazla 5 istek yapılabilir.
+    options.AddFixedWindowLimiter("AuthPolicy", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0; // Kuyruğa alma, direkt reddet
+    });
+
+    // 2. Genel API Uç Noktaları İçin Esnek Limit (Sliding Window)
+    // 1 dakikada en fazla 60 istek yapılabilir.
+    options.AddSlidingWindowLimiter("GeneralPolicy", opt =>
+    {
+        opt.PermitLimit = 60;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.SegmentsPerWindow = 6;
+        opt.QueueLimit = 0;
+    });
+});
 
 // --- JWT & AUTHENTICATION SERVİSLERİ ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -119,6 +152,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 //UYGULAMANIN İNŞASI (BUILD)
 var app = builder.Build();
 
+//serilog middleware
+app.UseSerilogRequestLogging();
+
 // HTTP REQUEST PIPELINE (Middleware'ler)
 if (app.Environment.IsDevelopment())
 {
@@ -131,6 +167,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+//rate limiter
+app.UseRateLimiter();
 
 // Authentication mutlaka Authorization'dan ÖNCE yazılmalıdır!
 app.UseAuthentication();
