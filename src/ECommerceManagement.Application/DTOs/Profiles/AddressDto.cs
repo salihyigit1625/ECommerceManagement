@@ -1,12 +1,31 @@
-namespace ECommerceManagement.Application.DTOs.Profiles;
+namespace ECommerceManagement.Application.DTOs.Address;
 
-public class AddressDto
-{
-    public int Id { get; set; }
-    public string Title { get; set; } = string.Empty;
-    public string City { get; set; } = string.Empty;
-    public string District { get; set; } = string.Empty;
-    public string FullAddress { get; set; } = string.Empty;
-    public bool IsBilling { get; set; }
-    public bool IsShipping { get; set; }
-}
+public record CreateAddressDto(
+    string Title,
+    string City,
+    string District,
+    string FullAddress,
+    bool IsBilling = false,
+    bool IsShipping = false
+);
+
+public record UpdateAddressDto(
+    int Id,
+    string Title,
+    string City,
+    string District,
+    string FullAddress,
+    bool IsBilling,
+    bool IsShipping
+);
+
+public record AddressDto(
+    int Id,
+    int CustomerId,
+    string Title,
+    string City,
+    string District,
+    string FullAddress,
+    bool IsBilling,
+    bool IsShipping
+);

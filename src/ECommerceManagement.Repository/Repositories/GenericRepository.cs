@@ -98,4 +98,25 @@ public class GenericRepository<T> : IGenericRepository<T> where T : class
 
         return (items, totalCount);
     }
+    
+    public async Task<T?> GetAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = _dbSet;
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+        return await query.FirstOrDefaultAsync(predicate);
+    }
+
+    public async Task<IEnumerable<T>> GetWhereAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)
+    {
+        IQueryable<T> query = _dbSet;
+        foreach (var include in includes)
+        {
+            query = query.Include(include);
+        }
+        return await query.Where(predicate).ToListAsync();
+    }
+    
 }

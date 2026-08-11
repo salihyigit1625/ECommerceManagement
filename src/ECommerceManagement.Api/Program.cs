@@ -148,7 +148,7 @@ builder.Services.AddScoped<ICustomerOrderService, CustomerOrderService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-
+builder.Services.AddScoped<IAddressService, AddressService>();
 
 //UYGULAMANIN İNŞASI (BUILD)
 var app = builder.Build();

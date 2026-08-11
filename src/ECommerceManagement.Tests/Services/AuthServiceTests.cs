@@ -9,6 +9,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using System.Linq.Expressions;
 using Xunit;
 
 namespace ECommerceManagement.Tests.Services;
@@ -19,6 +20,7 @@ public class AuthServiceTests
     private readonly Mock<IGenericRepository<Customer>> _mockCustomerRepo;
     private readonly Mock<IGenericRepository<Seller>> _mockSellerRepo;
     private readonly Mock<IGenericRepository<UserRole>> _mockUserRoleRepo;
+    private readonly Mock<IGenericRepository<Role>> _mockRoleRepo;
     private readonly Mock<ITokenService> _mockTokenService;
     private readonly Mock<IUnitOfWork> _mockUow;
     private readonly IMapper _mapper;
@@ -30,6 +32,7 @@ public class AuthServiceTests
         _mockCustomerRepo = new Mock<IGenericRepository<Customer>>();
         _mockSellerRepo = new Mock<IGenericRepository<Seller>>();
         _mockUserRoleRepo = new Mock<IGenericRepository<UserRole>>();
+        _mockRoleRepo = new Mock<IGenericRepository<Role>>();
         _mockTokenService = new Mock<ITokenService>();
         _mockUow = new Mock<IUnitOfWork>();
 
@@ -45,6 +48,7 @@ public class AuthServiceTests
             _mockCustomerRepo.Object,
             _mockSellerRepo.Object,
             _mockUserRoleRepo.Object,
+            _mockRoleRepo.Object,
             _mockTokenService.Object,
             _mockUow.Object,
             _mapper 
@@ -63,7 +67,10 @@ public class AuthServiceTests
             LastName = "Customer"
         };
 
-        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User>());
+        // GetAllAsync yerine GetAsync mocklaması yapıldı (Kullanıcı bulunamadı durumu)
+        _mockUserRepo.Setup(x => x.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<Expression<Func<User, object>>[]>()))
+                     .ReturnsAsync((User?)null);
+                     
         _mockTokenService.Setup(x => x.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>())).Returns("mock_access_token");
         _mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("mock_refresh_token");
 
@@ -84,7 +91,9 @@ public class AuthServiceTests
         var dto = new CustomerRegisterDto { Email = "existing@test.com", Password = "Pass123!", Username = "user1" };
         var existingUser = new User { Email = "existing@test.com" };
 
-        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { existingUser });
+        // Kullanıcı veritabanında mevcut durumu mocklanıyor
+        _mockUserRepo.Setup(x => x.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<Expression<Func<User, object>>[]>()))
+                     .ReturnsAsync(existingUser);
 
         // Act
         Func<Task> act = async () => await _authService.RegisterCustomerAsync(dto);
@@ -107,7 +116,9 @@ public class AuthServiceTests
             TaxNumber = "1234567890"
         };
 
-        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User>());
+        _mockUserRepo.Setup(x => x.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<Expression<Func<User, object>>[]>()))
+                     .ReturnsAsync((User?)null);
+                     
         _mockTokenService.Setup(x => x.GenerateAccessToken(It.IsAny<User>(), It.IsAny<IList<string>>())).Returns("seller_token");
         _mockTokenService.Setup(x => x.GenerateRefreshToken()).Returns("seller_refresh");
 
@@ -125,7 +136,9 @@ public class AuthServiceTests
     {
         // Arrange
         var dto = new LoginDto { Email = "notfound@test.com", Password = "Password123!" };
-        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User>());
+        
+        _mockUserRepo.Setup(x => x.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<Expression<Func<User, object>>[]>()))
+                     .ReturnsAsync((User?)null);
 
         // Act
         Func<Task> act = async () => await _authService.LoginAsync(dto);
@@ -144,7 +157,8 @@ public class AuthServiceTests
         var user = new User { Id = 1, Email = "banned@test.com", IsActive = false };
         user.PasswordHash = hasher.HashPassword(user, "CorrectPassword123!");
 
-        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { user });
+        _mockUserRepo.Setup(x => x.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<Expression<Func<User, object>>[]>()))
+                     .ReturnsAsync(user);
 
         // Act
         Func<Task> act = async () => await _authService.LoginAsync(dto);
@@ -157,14 +171,19 @@ public class AuthServiceTests
     [Fact]
     public async Task LoginAsync_Should_Throw_UnauthorizedException_When_Password_Is_Wrong()
     {
+        // Arrange
         var hasher = new PasswordHasher<User>();
         var dto = new LoginDto { Email = "wrong@test.com", Password = "WrongPassword123!" };
         var user = new User { Id = 1, Email = "wrong@test.com", IsActive = true };
         user.PasswordHash = hasher.HashPassword(user, "RealPassword123!");
 
-        _mockUserRepo.Setup(x => x.GetAllAsync()).ReturnsAsync(new List<User> { user });
+        _mockUserRepo.Setup(x => x.GetAsync(It.IsAny<Expression<Func<User, bool>>>(), It.IsAny<Expression<Func<User, object>>[]>()))
+                     .ReturnsAsync(user);
 
+        // Act
         var exception = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.LoginAsync(dto));
+        
+        // Assert
         exception.Message.Should().Be("Geçersiz e-posta veya şifre.");
     }
 }

@@ -2,31 +2,33 @@ using AutoMapper;
 using ECommerceManagement.Application.DTOs.Catalog;
 using ECommerceManagement.Application.Interfaces;
 using ECommerceManagement.Domain.Entities;
+using ECommerceManagement.Domain.Enums;
 
 namespace ECommerceManagement.Application.Services;
 
 public class ProductService : IProductService
 {
     private readonly IGenericRepository<Product> _productRepository;
+    private readonly IGenericRepository<ProductMovement> _productMovementRepository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
-    public ProductService(IGenericRepository<Product> productRepository, IUnitOfWork unitOfWork, IMapper mapper)
+    public ProductService(
+        IGenericRepository<Product> productRepository, 
+        IGenericRepository<ProductMovement> productMovementRepository, 
+        IUnitOfWork unitOfWork, 
+        IMapper mapper)
     {
         _productRepository = productRepository;
+        _productMovementRepository = productMovementRepository;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public async Task<IEnumerable<SellerProductDto>> GetProductsBySellerIdAsync(int sellerId)
     {
-        var products = await _productRepository.GetAllAsync(
-            p => p.Category, 
-            p => p.Seller, 
-            p => p.Warehouse
-        );
-
-        var sellerProducts = products.Where(p => p.SellerId == sellerId);
+        // PERFORMANS: Tüm tabloyu RAM'e almak yerine doğrudan veritabanı seviyesinde filtreleme yapıldı.
+        var sellerProducts = await _productRepository.GetWhereAsync(p => p.SellerId == sellerId);
         return _mapper.Map<IEnumerable<SellerProductDto>>(sellerProducts);
     }
 
@@ -51,6 +53,18 @@ public class ProductService : IProductService
 
         await _productRepository.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
+
+        if (product.Quantity > 0)
+        {
+            await _productMovementRepository.AddAsync(new ProductMovement
+            {
+                ProductId = product.Id,
+                MovementType = MovementType.Entry,
+                Quantity = product.Quantity,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 
     public async Task UpdateAsync(UpdateProductDto dto)
@@ -65,10 +79,24 @@ public class ProductService : IProductService
         if (dto.Quantity < 0)
             throw new InvalidOperationException("Stok miktarı negatif olamaz.");
 
+        int stockDifference = dto.Quantity - product.Quantity;
+
         _mapper.Map(dto, product);
         product.UpdatedAt = DateTime.UtcNow;
 
         _productRepository.Update(product);
+
+        if (stockDifference != 0)
+        {
+            await _productMovementRepository.AddAsync(new ProductMovement
+            {
+                ProductId = product.Id,
+                MovementType = stockDifference > 0 ? MovementType.Entry : MovementType.Exit,
+                Quantity = Math.Abs(stockDifference),
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
         await _unitOfWork.SaveChangesAsync();
     }
 

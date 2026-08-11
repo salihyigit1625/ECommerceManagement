@@ -9,48 +9,54 @@ public class CustomerOrderService : ICustomerOrderService
 {
     private readonly IGenericRepository<Order> _orderRepository;
     private readonly IGenericRepository<Product> _productRepository;
+    private readonly IGenericRepository<Address> _addressRepository;
+    private readonly IGenericRepository<ProductMovement> _productMovementRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CustomerOrderService(
         IGenericRepository<Order> orderRepository,
         IGenericRepository<Product> productRepository,
+        IGenericRepository<Address> addressRepository,
+        IGenericRepository<ProductMovement> productMovementRepository,
         IUnitOfWork unitOfWork)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
+        _addressRepository = addressRepository;
+        _productMovementRepository = productMovementRepository;
         _unitOfWork = unitOfWork;
     }
 
     public async Task<IEnumerable<OrderDto>> GetMyOrdersAsync(int customerId)
     {
-        var orders = await _orderRepository.GetAllAsync(
+        var orders = await _orderRepository.GetWhereAsync(
+            o => o.CustomerId == customerId,
             o => o.Customer, 
             o => o.OrderItems
         );
 
-        var products = await _productRepository.GetAllAsync();
+        var productIds = orders.SelectMany(o => o.OrderItems.Select(item => item.ProductId)).Distinct().ToList();
+        var products = await _productRepository.GetWhereAsync(p => productIds.Contains(p.Id));
         var productDict = products.ToDictionary(p => p.Id, p => p.Name);
 
-        return orders
-            .Where(o => o.CustomerId == customerId)
-            .Select(o => new OrderDto
+        return orders.Select(o => new OrderDto
+        {
+            Id = o.Id,
+            CustomerId = o.CustomerId,
+            CustomerFullName = o.Customer != null ? $"{o.Customer.FirstName} {o.Customer.LastName}" : string.Empty,
+            SellerId = o.SellerId,
+            TotalAmount = o.TotalAmount,
+            Status = o.Status,
+            CreatedAt = o.CreatedAt,
+            Items = o.OrderItems.Select(item => new OrderItemDto
             {
-                Id = o.Id,
-                CustomerId = o.CustomerId,
-                CustomerFullName = o.Customer != null ? $"{o.Customer.FirstName} {o.Customer.LastName}" : string.Empty,
-                SellerId = o.SellerId,
-                TotalAmount = o.TotalAmount,
-                Status = o.Status,
-                CreatedAt = o.CreatedAt,
-                Items = o.OrderItems.Select(item => new OrderItemDto
-                {
-                    ProductId = item.ProductId,
-                    ProductName = productDict.TryGetValue(item.ProductId, out var prodName) ? prodName : string.Empty,
-                    Quantity = item.Quantity,
-                    UnitPrice = item.UnitPrice,
-                    LineTotal = item.LineTotal
-                }).ToList()
-            });
+                ProductId = item.ProductId,
+                ProductName = productDict.TryGetValue(item.ProductId, out var prodName) ? prodName : string.Empty,
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                LineTotal = item.LineTotal
+            }).ToList()
+        });
     }
 
     public async Task CreateOrderAsync(CreateOrderDto dto)
@@ -58,7 +64,16 @@ public class CustomerOrderService : ICustomerOrderService
         if (!dto.Items.Any())
             throw new ArgumentException("Sepet boş olamaz.");
 
-        var allProducts = await _productRepository.GetAllAsync();
+        var shippingAddress = await _addressRepository.GetByIdAsync(dto.ShippingAddressId);
+        if (shippingAddress == null || shippingAddress.CustomerId != dto.CustomerId || !shippingAddress.IsShipping)
+            throw new InvalidOperationException("Geçersiz, size ait olmayan veya teslimat için uygun olmayan bir adres seçildi.");
+
+        var billingAddress = await _addressRepository.GetByIdAsync(dto.BillingAddressId);
+        if (billingAddress == null || billingAddress.CustomerId != dto.CustomerId || !billingAddress.IsBilling)
+            throw new InvalidOperationException("Geçersiz, size ait olmayan veya fatura için uygun olmayan bir adres seçildi.");
+        var productIds = dto.Items.Select(i => i.ProductId).ToList();
+        var allProducts = await _productRepository.GetWhereAsync(p => productIds.Contains(p.Id));
+        
         var orderProducts = new List<(Product Entity, int RequestedQuantity)>();
 
         foreach (var item in dto.Items)
@@ -82,6 +97,20 @@ public class CustomerOrderService : ICustomerOrderService
             decimal totalAmount = 0;
             var orderItems = new List<OrderItem>();
 
+            var newOrder = new Order
+            {
+                CustomerId = dto.CustomerId,
+                SellerId = sellerId,
+                ShippingAddressId = dto.ShippingAddressId,
+                BillingAddressId = dto.BillingAddressId,
+                TotalAmount = 0,
+                Status = OrderStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _orderRepository.AddAsync(newOrder);
+            await _unitOfWork.SaveChangesAsync(); 
+
             foreach (var item in sellerGroup)
             {
                 var product = item.Entity;
@@ -99,20 +128,21 @@ public class CustomerOrderService : ICustomerOrderService
                     UnitPrice = product.Price,
                     LineTotal = lineTotal
                 });
+
+                await _productMovementRepository.AddAsync(new ProductMovement
+                {
+                    ProductId = product.Id, 
+                    MovementType = MovementType.Exit,
+                    Quantity = reqQty,
+                    ReferenceId = newOrder.Id, 
+                    CreatedAt = DateTime.UtcNow
+                });
             }
 
-            var newOrder = new Order
-            {
-                CustomerId = dto.CustomerId,
-                SellerId = sellerId,
-                ShippingAddressId = dto.ShippingAddressId,
-                BillingAddressId = dto.BillingAddressId,
-                TotalAmount = totalAmount,
-                Status = OrderStatus.Pending,
-                OrderItems = orderItems
-            };
-
-            await _orderRepository.AddAsync(newOrder);
+            newOrder.TotalAmount = totalAmount;
+            newOrder.OrderItems = orderItems;
+            
+            _orderRepository.Update(newOrder); 
         }
 
         await _unitOfWork.SaveChangesAsync();
@@ -138,6 +168,15 @@ public class CustomerOrderService : ICustomerOrderService
             {
                 product.Quantity += item.Quantity;
                 _productRepository.Update(product);
+
+                await _productMovementRepository.AddAsync(new ProductMovement
+                {
+                    ProductId = product.Id,
+                    MovementType = MovementType.Entry,
+                    Quantity = item.Quantity,
+                    ReferenceId = order.Id,
+                    CreatedAt = DateTime.UtcNow
+                });
             }
         }
     

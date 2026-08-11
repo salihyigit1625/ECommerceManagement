@@ -13,6 +13,7 @@ public class AuthService : IAuthService
     private readonly IGenericRepository<Customer> _customerRepository;
     private readonly IGenericRepository<Seller> _sellerRepository;
     private readonly IGenericRepository<UserRole> _userRoleRepository;
+    private readonly IGenericRepository<Role> _roleRepository;
     private readonly ITokenService _tokenService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
@@ -23,6 +24,7 @@ public class AuthService : IAuthService
         IGenericRepository<Customer> customerRepository,
         IGenericRepository<Seller> sellerRepository,
         IGenericRepository<UserRole> userRoleRepository,
+        IGenericRepository<Role> roleRepository,
         ITokenService tokenService,
         IUnitOfWork unitOfWork,
         IMapper mapper)
@@ -31,6 +33,7 @@ public class AuthService : IAuthService
         _customerRepository = customerRepository;
         _sellerRepository = sellerRepository;
         _userRoleRepository = userRoleRepository;
+        _roleRepository = roleRepository;
         _tokenService = tokenService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -38,8 +41,8 @@ public class AuthService : IAuthService
 
     public async Task<TokenResponseDto> RegisterCustomerAsync(CustomerRegisterDto dto)
     {
-        var existingUsers = await _userRepository.GetAllAsync();
-        if (existingUsers.Any(u => u.Email == dto.Email))
+        var existingUser = await _userRepository.GetAsync(u => u.Email == dto.Email);
+        if (existingUser != null)
             throw new InvalidOperationException("Bu e-posta adresi ile zaten bir kayıt mevcut.");
 
         var user = _mapper.Map<User>(dto);
@@ -55,19 +58,18 @@ public class AuthService : IAuthService
         customer.CreatedAt = DateTime.UtcNow;
         await _customerRepository.AddAsync(customer);
 
-        // Kullanıcıya Veritabanında Rol Atama (Id: 4 -> Customer)
         var userRole = new UserRole { UserId = user.Id, RoleId = 4 };
         await _userRoleRepository.AddAsync(userRole);
         
         await _unitOfWork.SaveChangesAsync();
 
-        return await GenerateTokensForUserAsync(user, AppRoles.Customer);
+        return await GenerateTokensForUserAsync(user, new List<string> { AppRoles.Customer });
     }
 
     public async Task<TokenResponseDto> RegisterSellerAsync(SellerRegisterDto dto)
     {
-        var existingUsers = await _userRepository.GetAllAsync();
-        if (existingUsers.Any(u => u.Email == dto.Email))
+        var existingUser = await _userRepository.GetAsync(u => u.Email == dto.Email);
+        if (existingUser != null)
             throw new InvalidOperationException("Bu e-posta adresi ile zaten bir kayıt mevcut.");
 
         var user = _mapper.Map<User>(dto);
@@ -83,85 +85,61 @@ public class AuthService : IAuthService
         seller.CreatedAt = DateTime.UtcNow;
         await _sellerRepository.AddAsync(seller);
 
-        // Kullanıcıya Veritabanında Rol Atama (Id: 3 -> Seller)
         var userRole = new UserRole { UserId = user.Id, RoleId = 3 };
         await _userRoleRepository.AddAsync(userRole);
         
         await _unitOfWork.SaveChangesAsync();
 
-        return await GenerateTokensForUserAsync(user, AppRoles.Seller);
+        return await GenerateTokensForUserAsync(user, new List<string> { AppRoles.Seller });
     }
 
     public async Task<TokenResponseDto> LoginAsync(LoginDto dto)
     {
-        var users = await _userRepository.GetAllAsync();
-        var user = users.FirstOrDefault(u => u.Email == dto.Email);
+        var user = await _userRepository.GetAsync(u => u.Email == dto.Email);
 
         if (user == null || !user.IsActive)
             throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
 
-        if (user.PasswordHash != dto.Password)
-        {
-            var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
-            if (result == PasswordVerificationResult.Failed)
-                throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
-        }
+        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, dto.Password);
+        if (result == PasswordVerificationResult.Failed)
+            throw new UnauthorizedAccessException("Geçersiz e-posta veya şifre.");
 
-        string role;
+        var userRoles = await _userRoleRepository.GetWhereAsync(ur => ur.UserId == user.Id);
+        var roleIds = userRoles.Select(ur => ur.RoleId).ToList();
         
-        if (user.Email == "superadmin@sistem.com") 
-        {
-            role = AppRoles.SuperAdmin;
-        }
-        else if (user.Email == "admin@sistem.com") 
-        {
-            role = AppRoles.Admin;
-        }
-        else 
-        {
-            var sellers = await _sellerRepository.GetAllAsync();
-            var isSeller = sellers.Any(s => s.UserId == user.Id);
-            role = isSeller ? AppRoles.Seller : AppRoles.Customer;
-        }
+        var roles = await _roleRepository.GetWhereAsync(r => roleIds.Contains(r.Id));
+        var roleNames = roles.Select(r => r.Name).ToList();
 
-        return await GenerateTokensForUserAsync(user, role);
+        if (!roleNames.Any())
+            throw new UnauthorizedAccessException("Kullanıcıya atanmış herhangi bir rol bulunamadı.");
+
+        return await GenerateTokensForUserAsync(user, roleNames);
     }
 
     public async Task<TokenResponseDto> RefreshTokenAsync(RefreshTokenRequestDto dto)
     {
-        var users = await _userRepository.GetAllAsync();
-        var user = users.FirstOrDefault(u => u.RefreshToken == dto.RefreshToken);
+        var user = await _userRepository.GetAsync(u => u.RefreshToken == dto.RefreshToken);
 
         if (user == null || user.RefreshTokenExpiresAt <= DateTime.UtcNow)
             throw new UnauthorizedAccessException("Geçersiz veya süresi dolmuş Refresh Token. Lütfen tekrar giriş yapın.");
 
-        string role;
+        var userRoles = await _userRoleRepository.GetWhereAsync(ur => ur.UserId == user.Id);
+        var roleIds = userRoles.Select(ur => ur.RoleId).ToList();
         
-        if (user.Email == "superadmin@sistem.com") 
-        {
-            role = AppRoles.SuperAdmin;
-        }
-        else if (user.Email == "admin@sistem.com") 
-        {
-            role = AppRoles.Admin;
-        }
-        else 
-        {
-            var sellers = await _sellerRepository.GetAllAsync();
-            var isSeller = sellers.Any(s => s.UserId == user.Id);
-            role = isSeller ? AppRoles.Seller : AppRoles.Customer;
-        }
+        var roles = await _roleRepository.GetWhereAsync(r => roleIds.Contains(r.Id));
+        var roleNames = roles.Select(r => r.Name).ToList();
 
-        return await GenerateTokensForUserAsync(user, role);
+        return await GenerateTokensForUserAsync(user, roleNames);
     }
 
-    private async Task<TokenResponseDto> GenerateTokensForUserAsync(User user, string role)
+    private async Task<TokenResponseDto> GenerateTokensForUserAsync(User user, IList<string> roles)
     {
-        var accessToken = _tokenService.GenerateAccessToken(user, new List<string> { role });
+        var accessToken = _tokenService.GenerateAccessToken(user, roles);
         var refreshToken = _tokenService.GenerateRefreshToken();
 
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
+        
         _userRepository.Update(user);
         await _unitOfWork.SaveChangesAsync();
 
