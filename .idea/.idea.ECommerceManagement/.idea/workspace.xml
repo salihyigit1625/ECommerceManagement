@@ -14,7 +14,40 @@
     <option name="flavorId" value="CMakePlainProjectFlavor" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bb300253-9737-4132-9d53-faae60666ca2" name="Changes" comment="" />
+    <list default="true" id="bb300253-9737-4132-9d53-faae60666ca2" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/Handlers/SysmondAuthDelegatingHandler.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/Models/Responses/SysmondTokenResponse.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/Models/Settings/SysmondAxSettings.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/Services/Auth/ISysmondAuthService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/Services/Auth/SysmondAuthService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/Services/Stock/ISysmondStockService.cs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/Services/Stock/SysmondStockService.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/SysmondAx.Api.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/SysmondAx.Api.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/appsettings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/Debug/net10.0/SysmondAx.Api.AssemblyInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/Debug/net10.0/SysmondAx.Api.AssemblyInfo.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/Debug/net10.0/SysmondAx.Api.AssemblyInfoInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/Debug/net10.0/SysmondAx.Api.AssemblyInfoInputs.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/Debug/net10.0/SysmondAx.Api.assets.cache" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/Debug/net10.0/SysmondAx.Api.assets.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/Debug/net10.0/SysmondAx.Api.csproj.AssemblyReference.cache" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/Debug/net10.0/SysmondAx.Api.csproj.AssemblyReference.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/SysmondAx.Api.csproj.nuget.dgspec.json" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/SysmondAx.Api.csproj.nuget.dgspec.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/SysmondAx.Api.csproj.nuget.g.props" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/SysmondAx.Api.csproj.nuget.g.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/project.assets.json" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/project.assets.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/project.nuget.cache" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/project.nuget.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/project.packagespec.json" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/project.packagespec.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/rider.project.restore.info" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Api/obj/rider.project.restore.info" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/Class1.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/SysmondAx.Integration.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/SysmondAx.Integration.csproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.AssemblyInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.AssemblyInfo.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.AssemblyInfoInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.AssemblyInfoInputs.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.assets.cache" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.assets.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/SysmondAx.Integration.csproj.nuget.dgspec.json" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/SysmondAx.Integration.csproj.nuget.dgspec.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/SysmondAx.Integration.csproj.nuget.g.props" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/SysmondAx.Integration.csproj.nuget.g.props" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/SysmondAx.Integration.csproj.nuget.g.targets" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/SysmondAx.Integration.csproj.nuget.g.targets" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/project.assets.json" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/project.assets.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/project.nuget.cache" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/project.nuget.cache" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/project.packagespec.json" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/project.packagespec.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/rider.project.restore.info" beforeDir="false" afterPath="$PROJECT_DIR$/integrations/SysmondAx.Integration/obj/rider.project.restore.info" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -40,7 +73,13 @@
   }
 }</component>
   <component name="HighlightingSettingsPerFile">
-    <setting file="file://$PROJECT_DIR$/SysmondAx.Integration/Class1.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/integrations/SysmondAx.Integration/Handlers/SysmondAuthDelegatingHandler.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/integrations/SysmondAx.Integration/Models/Responses/SysmondTokenResponse.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/integrations/SysmondAx.Integration/Models/Settings/SysmondAxSettings.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/integrations/SysmondAx.Integration/Services/Auth/ISysmondAuthService.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/integrations/SysmondAx.Integration/Services/Auth/SysmondAuthService.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/integrations/SysmondAx.Integration/Services/Stock/ISysmondStockService.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/integrations/SysmondAx.Integration/Services/Stock/SysmondStockService.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/ECommerceManagement.Api/Controllers/AdminController.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/ECommerceManagement.Api/Controllers/AuthController.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/src/ECommerceManagement.Api/Controllers/CatalogController.cs" root0="FORCE_HIGHLIGHTING" />
@@ -333,7 +372,8 @@
     <MESSAGE value="SysmondAx integration initial commit" />
     <MESSAGE value="unversioned files" />
     <MESSAGE value="Fixed folders" />
-    <option name="LAST_COMMIT_MESSAGE" value="Fixed folders" />
+    <MESSAGE value="fixing folders" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixing folders" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
