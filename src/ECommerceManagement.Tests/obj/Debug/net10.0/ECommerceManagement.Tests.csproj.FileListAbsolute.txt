@@ -174,3 +174,5 @@
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Tests/obj/Debug/net10.0/ECommerceManagement.Tests.pdb
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Tests/obj/Debug/net10.0/ECommerceManagement.Tests.genruntimeconfig.cache
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Tests/obj/Debug/net10.0/ref/ECommerceManagement.Tests.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Tests/bin/Debug/net10.0/SysmondAx.Integration.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Tests/bin/Debug/net10.0/SysmondAx.Integration.pdb

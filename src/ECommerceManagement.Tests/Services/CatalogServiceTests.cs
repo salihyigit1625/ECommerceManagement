@@ -4,26 +4,40 @@ using ECommerceManagement.Application.DTOs.Catalog;
 using ECommerceManagement.Application.Services;
 using ECommerceManagement.Domain.Entities;
 using ECommerceManagement.Application.Interfaces;
+using SysmondAx.Integration.Services.Stock;
 using FluentAssertions;
 using Moq;
 using System.Linq.Expressions;
+using SysmondAx.Integration.Services.Warehouse;
 
 namespace ECommerceManagement.Tests.Services;
 
 public class CatalogServiceTests
 {
     private readonly Mock<IGenericRepository<Product>> _mockProductRepo;
+    private readonly Mock<IGenericRepository<Warehouse>> _mockWarehouseRepo;
     private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<ISysmondStockService> _mockSysmondStockService;
+    private readonly Mock<ISysmondWarehouseService> _mockSysmondWarehouseService;
+    private readonly Mock<IUnitOfWork> _mockUnitOfWork;
     private readonly CatalogService _catalogService;
 
     public CatalogServiceTests()
     {
         _mockProductRepo = new Mock<IGenericRepository<Product>>();
+        _mockWarehouseRepo = new Mock<IGenericRepository<Warehouse>>();
         _mockMapper = new Mock<IMapper>();
+        _mockSysmondStockService = new Mock<ISysmondStockService>();
+        _mockSysmondWarehouseService = new Mock<ISysmondWarehouseService>();
+        _mockUnitOfWork = new Mock<IUnitOfWork>();
 
         _catalogService = new CatalogService(
             _mockProductRepo.Object,
-            _mockMapper.Object
+            _mockWarehouseRepo.Object,
+            _mockMapper.Object,
+            _mockSysmondStockService.Object,
+            _mockSysmondWarehouseService.Object,
+            _mockUnitOfWork.Object
         );
     }
 

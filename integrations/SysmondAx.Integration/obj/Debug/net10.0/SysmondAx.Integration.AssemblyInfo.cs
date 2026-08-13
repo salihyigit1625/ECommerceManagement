@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SysmondAx.Integration")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b6fdb563daf6dfa3a85f9a7dfb470e6e21939259")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7c119e29065ccfd4146eb14b6568b6099129cf71")]
 [assembly: System.Reflection.AssemblyProductAttribute("SysmondAx.Integration")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SysmondAx.Integration")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

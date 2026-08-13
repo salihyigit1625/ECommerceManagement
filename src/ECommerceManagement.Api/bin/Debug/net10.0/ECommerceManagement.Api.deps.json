@@ -993,7 +993,8 @@
           "AutoMapper": "16.2.0",
           "ECommerceManagement.Domain": "1.0.0",
           "FluentValidation.DependencyInjectionExtensions": "12.1.1",
-          "Microsoft.OpenApi": "1.6.14"
+          "Microsoft.OpenApi": "1.6.14",
+          "SysmondAx.Integration": "1.0.0"
         },
         "runtime": {
           "ECommerceManagement.Application.dll": {
@@ -1034,6 +1035,14 @@
         },
         "runtime": {
           "ECommerceManagement.Repository.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "SysmondAx.Integration/1.0.0": {
+        "runtime": {
+          "SysmondAx.Integration.dll": {
             "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
           }
@@ -1518,6 +1527,11 @@
       "sha512": ""
     },
     "ECommerceManagement.Repository/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "SysmondAx.Integration/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

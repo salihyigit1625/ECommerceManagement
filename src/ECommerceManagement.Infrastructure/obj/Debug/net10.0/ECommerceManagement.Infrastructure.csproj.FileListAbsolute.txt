@@ -18,3 +18,5 @@
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/refint/ECommerceManagement.Infrastructure.dll
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ECommerceManagement.Infrastructure.pdb
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/obj/Debug/net10.0/ref/ECommerceManagement.Infrastructure.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/bin/Debug/net10.0/SysmondAx.Integration.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Infrastructure/bin/Debug/net10.0/SysmondAx.Integration.pdb

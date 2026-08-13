@@ -18,8 +18,15 @@ using Serilog;
 using System.Threading.RateLimiting;
 using ECommerceManagement.Repository.Seed;
 using Microsoft.AspNetCore.RateLimiting;
+using SysmondAx.Integration.Handlers;
+using SysmondAx.Integration.Models.Settings;
+using SysmondAx.Integration.Services.Auth;
+using SysmondAx.Integration.Services.Stock;
+using SysmondAx.Integration.Services.Warehouse;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<SysmondAxSettings>(builder.Configuration.GetSection("SysmondAxSettings"));
 
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
@@ -139,6 +146,37 @@ builder.Services.AddStackExchangeRedisCache(options =>
 // Repository ve UnitOfWork Kayıtları
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+
+// ==========================================
+// SYSMOND ENTEGRASYON KAYITLARI
+// ==========================================
+
+// 0. Auth servisinin token'ı hafızada tutabilmesi için MemoryCache ekleniyor
+builder.Services.AddMemoryCache(); // <-- EKLENDİ
+
+// 1. Handler'ın ihtiyaç duyduğu Auth Servisinin Kaydı (Buna Handler TAKILMAZ!)
+builder.Services.AddHttpClient<ISysmondAuthService, SysmondAuthService>(client => // <-- EKLENDİ
+{
+    client.BaseAddress = new Uri(builder.Configuration["SysmondAxSettings:BaseUrl"]!);
+});
+
+// 2. Önce Handler'ı transient olarak kaydediyoruz (Her HTTP isteğinde yeni bir token kontrolü yapabilmesi için)
+builder.Services.AddTransient<SysmondAuthDelegatingHandler>();
+
+// 3. Ardından HttpClient'ı kaydedip, içine bu Handler'ı takıyoruz
+builder.Services.AddHttpClient<ISysmondWarehouseService, SysmondWarehouseService>(client =>
+    {
+        // Sysmond Base URL'ini API projesindeki appsettings.json'dan çekiyoruz
+        client.BaseAddress = new Uri(builder.Configuration["SysmondAxSettings:BaseUrl"]!);
+    })
+    .AddHttpMessageHandler<SysmondAuthDelegatingHandler>();
+
+builder.Services.AddHttpClient<ISysmondStockService, SysmondStockService>(client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["SysmondAxSettings:BaseUrl"]!);
+    })
+    .AddHttpMessageHandler<SysmondAuthDelegatingHandler>();
 
 // Servis Kayıtları
 builder.Services.AddScoped<IProductService, ProductService>();

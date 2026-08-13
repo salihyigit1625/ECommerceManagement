@@ -21,6 +21,8 @@ public class Product : BaseEntity
     
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
     public ICollection<ProductMovement> Movements { get; set; } = new List<ProductMovement>();
+    
+    public Guid? SysmondStockId { get; set; } // entegrasyon için gerekli
 }
 
 public class ProductImage : BaseEntity

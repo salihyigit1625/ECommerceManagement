@@ -4,6 +4,9 @@ using ECommerceManagement.Application.DTOs.Catalog;
 using ECommerceManagement.Application.Interfaces;
 using ECommerceManagement.Domain.Entities;
 using Microsoft.Extensions.Caching.Distributed;
+using SysmondAx.Integration.Models.Requests;
+using SysmondAx.Integration.Services.Warehouse;
+
 
 namespace ECommerceManagement.Application.Services;
 
@@ -16,6 +19,7 @@ public class AdminService : IAdminService
     private readonly IDistributedCache _cache;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly ISysmondWarehouseService _sysmondWarehouseService;
 
     public AdminService(
         IGenericRepository<Category> categoryRepository,
@@ -24,7 +28,8 @@ public class AdminService : IAdminService
         IGenericRepository<UserPermission> userPermissionRepository,
         IDistributedCache cache,
         IUnitOfWork unitOfWork,
-        IMapper mapper)
+        IMapper mapper,
+        ISysmondWarehouseService sysmondWarehouseService)
     {
         _categoryRepository = categoryRepository;
         _warehouseRepository = warehouseRepository;
@@ -33,6 +38,7 @@ public class AdminService : IAdminService
         _cache = cache;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _sysmondWarehouseService = sysmondWarehouseService;
     }
     
     public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
@@ -58,7 +64,59 @@ public class AdminService : IAdminService
     {
         var warehouse = _mapper.Map<Warehouse>(dto);
         warehouse.IsActive = true;
+        
+        // entegrasyon
+        var sysmondRequest = new SysmondWarehouseRequest
+        {
+            Name = dto.Name // Kendi DTO'muzdan gelen Name değerini veriyoruz
+        };
+
+        // 3. Sysmond servisini çağırıp ID'yi alıyoruz
+        string sysmondGuidStr = await _sysmondWarehouseService.CreateWarehouseAsync(sysmondRequest);
+
+        // 4. Gelen GUID'i kendi entity'mize (Domain nesnemize) kaydediyoruz
+        if (Guid.TryParse(sysmondGuidStr, out Guid sysmondId))
+        {
+            warehouse.SysmondId = sysmondId;
+        }
+        
         await _warehouseRepository.AddAsync(warehouse);
+        await _unitOfWork.SaveChangesAsync();
+    }
+    
+    public async Task SyncWarehousesAsync()
+    {
+        // A. Sysmond tarafındaki güncel depoları çek
+        var sysmondWarehouses = await _sysmondWarehouseService.GetWarehousesAsync();
+
+        // B. Kendi lokal depolarımızı çek
+        var localWarehouses = await _warehouseRepository.GetAllAsync();
+
+        foreach (var sysWarehouse in sysmondWarehouses)
+        {
+            // Bu depo daha önce SysmondId ile lokalimize kaydedilmiş mi?
+            var existingWarehouse = localWarehouses.FirstOrDefault(w => w.SysmondId == sysWarehouse.Id);
+
+            if (existingWarehouse == null)
+            {
+                // Lokalimizde yoksa yeni depo olarak ekle
+                var newWarehouse = new Warehouse
+                {
+                    Name = sysWarehouse.Name,
+                    IsActive = true,
+                    SysmondId = sysWarehouse.Id
+                };
+                await _warehouseRepository.AddAsync(newWarehouse);
+            }
+            else
+            {
+                // Varsa bilgilerini güncelle (Örn: İsim değişikliği vb.)
+                existingWarehouse.Name = sysWarehouse.Name;
+                _warehouseRepository.Update(existingWarehouse);
+            }
+        }
+
+        // Değişiklikleri veritabanına kaydet
         await _unitOfWork.SaveChangesAsync();
     }
     

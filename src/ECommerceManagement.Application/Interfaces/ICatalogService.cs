@@ -6,4 +6,5 @@ namespace ECommerceManagement.Application.Interfaces;
 public interface ICatalogService
 {
     Task<PagedResultDto<ProductDto>> GetActiveProductsPagedAsync(ProductFilterDto filter);
+    Task SyncProductsAsync();
 }

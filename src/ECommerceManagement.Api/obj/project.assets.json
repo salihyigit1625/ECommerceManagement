@@ -1402,7 +1402,8 @@
           "AutoMapper": "16.2.0",
           "ECommerceManagement.Domain": "1.0.0",
           "FluentValidation.DependencyInjectionExtensions": "12.1.1",
-          "Microsoft.OpenApi": "3.9.0"
+          "Microsoft.OpenApi": "3.9.0",
+          "SysmondAx.Integration": "1.0.0"
         },
         "compile": {
           "bin/placeholder/ECommerceManagement.Application.dll": {}
@@ -1452,6 +1453,16 @@
         },
         "runtime": {
           "bin/placeholder/ECommerceManagement.Repository.dll": {}
+        }
+      },
+      "SysmondAx.Integration/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "compile": {
+          "bin/placeholder/SysmondAx.Integration.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/SysmondAx.Integration.dll": {}
         }
       }
     }
@@ -4234,6 +4245,11 @@
       "type": "project",
       "path": "../ECommerceManagement.Repository/ECommerceManagement.Repository.csproj",
       "msbuildProject": "../ECommerceManagement.Repository/ECommerceManagement.Repository.csproj"
+    },
+    "SysmondAx.Integration/1.0.0": {
+      "type": "project",
+      "path": "../../integrations/SysmondAx.Integration/SysmondAx.Integration.csproj",
+      "msbuildProject": "../../integrations/SysmondAx.Integration/SysmondAx.Integration.csproj"
     }
   },
   "projectFileDependencyGroups": {

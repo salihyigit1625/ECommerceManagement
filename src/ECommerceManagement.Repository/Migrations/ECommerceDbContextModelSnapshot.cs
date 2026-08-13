@@ -414,6 +414,9 @@ namespace ECommerceManagement.Repository.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("SysmondStockId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -732,6 +735,9 @@ namespace ECommerceManagement.Repository.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("SysmondId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 

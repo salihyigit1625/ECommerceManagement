@@ -184,3 +184,5 @@
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Api/obj/Debug/net10.0/ECommerceManagement.Api.pdb
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Api/obj/Debug/net10.0/ECommerceManagement.Api.genruntimeconfig.cache
 /Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Api/obj/Debug/net10.0/ref/ECommerceManagement.Api.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Api/bin/Debug/net10.0/SysmondAx.Integration.dll
+/Users/yigit/RiderProjects/ECommerceManagement/src/ECommerceManagement.Api/bin/Debug/net10.0/SysmondAx.Integration.pdb

@@ -8,6 +8,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System.Linq.Expressions;
+using SysmondAx.Integration.Services.Stock;
 using Xunit;
 
 namespace ECommerceManagement.Tests.Services;
@@ -16,14 +17,18 @@ public class ProductServiceTests
 {
     private readonly Mock<IGenericRepository<Product>> _mockProductRepo;
     private readonly Mock<IGenericRepository<ProductMovement>> _mockMovementRepo;
+    private readonly Mock<IGenericRepository<Warehouse>> _mockWarehouseRepo;
     private readonly Mock<IUnitOfWork> _mockUow;
     private readonly IMapper _mapper;
     private readonly ProductService _productService;
+    private readonly Mock<ISysmondStockService> _mockSysmondStockService;
 
     public ProductServiceTests()
     {
         _mockProductRepo = new Mock<IGenericRepository<Product>>();
         _mockMovementRepo = new Mock<IGenericRepository<ProductMovement>>();
+        _mockWarehouseRepo = new Mock<IGenericRepository<Warehouse>>();
+        _mockSysmondStockService = new Mock<ISysmondStockService>();
         _mockUow = new Mock<IUnitOfWork>();
 
         var services = new ServiceCollection();
@@ -44,8 +49,10 @@ public class ProductServiceTests
         _productService = new ProductService(
             _mockProductRepo.Object,
             _mockMovementRepo.Object,
+            _mockWarehouseRepo.Object,
             _mockUow.Object,
-            _mapper
+            _mapper,
+            _mockSysmondStockService.Object
         );
     }
 

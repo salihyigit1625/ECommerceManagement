@@ -7,4 +7,7 @@ public class Warehouse : BaseEntity
     public bool IsActive { get; set; } = true;
 
     public ICollection<Product> Products { get; set; } = new List<Product>();
+    
+    public Guid? SysmondId { get; set; }
+    
 }

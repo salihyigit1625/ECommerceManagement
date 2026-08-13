@@ -28,4 +28,23 @@ public class CatalogController : ControllerBase
         var result = await _catalogService.GetActiveProductsPagedAsync(filter);
         return Ok(result);
     }
+    
+    [HttpPost("sync")]
+    public async Task<IActionResult> SyncProducts()
+    {
+        try 
+        {
+            await _catalogService.SyncProductsAsync();
+            return Ok(new { message = "Ürünler Sysmond ile başarıyla senkronize edildi." });
+        }
+        catch (Exception ex)
+        {
+            // Detaylı hatayı log'a yazdır ve döndür
+            var errorMessage = ex.Message;
+            if (ex.InnerException != null)
+                errorMessage += " | Detay: " + ex.InnerException.Message;
+
+            return BadRequest(new { message = "Senkronizasyon başarısız oldu.", error = errorMessage });
+        }
+    }
 }

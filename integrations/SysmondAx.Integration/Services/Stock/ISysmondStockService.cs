@@ -1,7 +1,14 @@
+using SysmondAx.Integration.Models.Dtos;
+using SysmondAx.Integration.Models.Requests;
+
 namespace SysmondAx.Integration.Services.Stock;
 
 public interface ISysmondStockService
 {
-    // E-ticaret sistemindeki ürünü Sysmond'a gönderir ve Sysmond'un oluşturduğu ID'yi döner
-    Task<string> CreateStockCardAsync(object productDto); // object kısmını kendi Product modelinle değiştirebilirsin
+    Task<(Guid StockId, Guid? StockPriceId)> CreateStockAsync(SysmondStockRequest request);
+    Task MapStockToWarehouseAsync(Guid stockId, Guid warehouseId, double? criticalStockLevel = null);
+    Task<Guid> CreateStockReceiptAsync(Guid warehouseId, string description);
+    Task AddStockReceiptItemAsync(Guid receiptId, Guid stockId, Guid warehouseId, decimal quantity, decimal unitPrice, Guid? stockPriceId);
+    Task ProcessStockReceiptAsync(Guid receiptId);
+    Task<List<SysmondProductDto>> GetProductsAsync();
 }

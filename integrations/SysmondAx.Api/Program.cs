@@ -1,29 +1,47 @@
 using SysmondAx.Integration.Handlers;
 using SysmondAx.Integration.Models.Settings;
 using SysmondAx.Integration.Services.Auth;
-using SysmondAx.Integration.Services.Stock;
+using SysmondAx.Integration.Services.Warehouse;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 1. AppSettings Ayarlarının Yüklenmesi
 builder.Services.Configure<SysmondAxSettings>(builder.Configuration.GetSection("SysmondAxSettings"));
 
+// BaseUrl değerini güvenli bir şekilde alıyoruz
+var baseUrl = builder.Configuration["SysmondAxSettings:BaseUrl"];
+if (string.IsNullOrEmpty(baseUrl))
+{
+    throw new InvalidOperationException("'SysmondAxSettings:BaseUrl' değeri appsettings.json dosyasında bulunamadı!");
+}
+
 builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient<ISysmondAuthService, SysmondAuthService>();
+
+// 2. Controller Desteğinin Eklenmesi (app.MapControllers için şarttır)
+builder.Services.AddControllers();
+
+// 3. Auth Servisinin Kaydı (BaseAddress Eklendi - Handler TAKILMADI!)
+builder.Services.AddHttpClient<ISysmondAuthService, SysmondAuthService>(client =>
+{
+    client.BaseAddress = new Uri(baseUrl);
+});
+
+// 4. Token Handler Kaydı (Transient olarak)
 builder.Services.AddTransient<SysmondAuthDelegatingHandler>();
 
-builder.Services.AddHttpClient<ISysmondStockService, SysmondStockService>(client =>
+
+// 6. Warehouse Servisinin Kaydı
+builder.Services.AddHttpClient<ISysmondWarehouseService, SysmondWarehouseService>(client =>
     {
-        client.BaseAddress = new Uri(builder.Configuration["SysmondAxSettings:BaseUrl"]!);
+        client.BaseAddress = new Uri(baseUrl);
     })
     .AddHttpMessageHandler<SysmondAuthDelegatingHandler>();
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// OpenAPI / Swagger Desteği
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -31,7 +49,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// MapControllers'ın çalışması için AddControllers() yukarıda eklenmiştir
 app.MapControllers();
 
 app.Run();
-

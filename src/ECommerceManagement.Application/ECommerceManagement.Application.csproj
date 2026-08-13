@@ -8,13 +8,15 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\integrations\SysmondAx.Integration\SysmondAx.Integration.csproj" />
       <ProjectReference Include="..\ECommerceManagement.Domain\ECommerceManagement.Domain.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="AutoMapper" Version="16.2.0" />
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-      <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.10" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.11" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.11" />
       <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.10" />
       <PackageReference Include="Microsoft.OpenApi" Version="3.9.0" />
     </ItemGroup>

@@ -7,6 +7,7 @@ using ECommerceManagement.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Distributed;
 using Moq;
+using SysmondAx.Integration.Services.Warehouse;
 
 namespace ECommerceManagement.Tests.Services;
 
@@ -20,6 +21,7 @@ public class AdminServiceTests
     private readonly Mock<IMapper> _mockMapper;
     private readonly Mock<IDistributedCache> _mockCache;
     private readonly AdminService _adminService;
+    private readonly Mock<ISysmondWarehouseService> _mockSysmondWarehouseService;
 
     public AdminServiceTests()
     {
@@ -30,6 +32,7 @@ public class AdminServiceTests
         _mockUow = new Mock<IUnitOfWork>();
         _mockMapper = new Mock<IMapper>();
         _mockCache = new Mock<IDistributedCache>();
+        _mockSysmondWarehouseService = new Mock<ISysmondWarehouseService>();
 
         _adminService = new AdminService(
             _mockCategoryRepo.Object,
@@ -38,7 +41,8 @@ public class AdminServiceTests
             _mockUserPermissionRepo.Object,
             _mockCache.Object,
             _mockUow.Object,
-            _mockMapper.Object
+            _mockMapper.Object,
+            _mockSysmondWarehouseService.Object
         );
     }
 

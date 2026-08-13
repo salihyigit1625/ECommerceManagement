@@ -52,6 +52,13 @@ namespace ECommerceManagement.Api.Controllers
             return Ok(new { Message = "Depo başarıyla oluşturuldu." });
         }
         
+        [HttpPost("warehouses/sync")]
+        public async Task<IActionResult> SyncWarehouses()
+        {
+            await _adminService.SyncWarehousesAsync();
+            return Ok(new { message = "Depolar Sysmond ile başarıyla senkronize edildi." });
+        }
+        
         [HasPermission(AppPermissions.ManageRoles)]
         [HttpPost("assign-role")]
         public async Task<IActionResult> AssignRole([FromBody] AssignRoleDto dto)

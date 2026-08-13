@@ -11,6 +11,8 @@ public interface IAdminService
     Task<IEnumerable<WarehouseDto>> GetAllWarehousesAsync();
     Task CreateWarehouseAsync(CreateWarehouseDto dto);
     
+    Task SyncWarehousesAsync();
+    
     Task AssignRoleToUserAsync(AssignRoleDto dto);
     Task AssignPermissionToUserAsync(AssignUserPermissionDto dto);
 }
