@@ -5,10 +5,11 @@ using ECommerceManagement.Application.Services;
 using ECommerceManagement.Domain.Entities;
 using ECommerceManagement.Application.Interfaces;
 using SysmondAx.Integration.Services.Stock;
+using SysmondAx.Integration.Services.Warehouse;
 using FluentAssertions;
 using Moq;
 using System.Linq.Expressions;
-using SysmondAx.Integration.Services.Warehouse;
+using Xunit;
 
 namespace ECommerceManagement.Tests.Services;
 
@@ -44,7 +45,6 @@ public class CatalogServiceTests
     [Fact]
     public async Task GetActiveProductsPagedAsync_Should_Return_Paged_Result_With_Mapped_Dtos()
     {
-        // Arrange
         var filter = new ProductFilterDto
         {
             PageNumber = 1,
@@ -72,13 +72,10 @@ public class CatalogServiceTests
             It.IsAny<Expression<Func<Product, object>>[]>()
         )).ReturnsAsync((products, 1));
 
-        _mockMapper.Setup(m => m.Map<IEnumerable<ProductDto>>(products))
-            .Returns(productDtos);
+        _mockMapper.Setup(m => m.Map<IEnumerable<ProductDto>>(products)).Returns(productDtos);
 
-        // Act
         var result = await _catalogService.GetActiveProductsPagedAsync(filter);
 
-        // Assert
         result.Should().NotBeNull();
         result.TotalCount.Should().Be(1);
         result.PageNumber.Should().Be(1);

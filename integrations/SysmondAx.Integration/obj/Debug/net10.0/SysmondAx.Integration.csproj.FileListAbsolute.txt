@@ -1,0 +1,13 @@
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/bin/Debug/net10.0/SysmondAx.Integration.deps.json
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/bin/Debug/net10.0/SysmondAx.Integration.dll
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/bin/Debug/net10.0/SysmondAx.Integration.pdb
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.csproj.AssemblyReference.cache
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.GeneratedMSBuildEditorConfig.editorconfig
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.AssemblyInfoInputs.cache
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.AssemblyInfo.cs
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.csproj.CoreCompileInputs.cache
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.sourcelink.json
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.dll
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/refint/SysmondAx.Integration.dll
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/SysmondAx.Integration.pdb
+/Users/yigit/RiderProjects/ECommerceManagement/integrations/SysmondAx.Integration/obj/Debug/net10.0/ref/SysmondAx.Integration.dll

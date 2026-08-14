@@ -125,42 +125,43 @@ public class ProductService : IProductService
     public async Task UpdateProductAsync(int id, UpdateProductDto dto)
     {
         var product = await _productRepository.GetByIdAsync(id);
-        if (product == null) throw new KeyNotFoundException("Ürün bulunamadı.");
+        if (product == null)
+            throw new KeyNotFoundException("Ürün bulunamadı.");
 
-        // 1. STOK MİKTARI GÜNCELLEMESİ (Az önce yaptığımız Fiş mantığı aynen duruyor)
-        int quantityDifference = dto.Quantity - product.Quantity;
-        if (quantityDifference != 0 && product.SysmondStockId.HasValue)
-        {
-            var warehouse = await _warehouseRepository.GetByIdAsync(product.WarehouseId);
-            if (warehouse != null && warehouse.SysmondId.HasValue)
-            {
-                await _sysmondStockService.AdjustStockQuantityAsync(product.SysmondStockId.Value, warehouse.SysmondId.Value, quantityDifference);
-            }
-        }
+        // 1. Eski ve yeni stok miktarını mapping ÖNCESİNDE alıyoruz
+        int oldQuantity = product.Quantity;
+        int newQuantity = dto.Quantity;
 
-        // 2. FİYAT GÜNCELLEMESİ (YENİ EKLENEN KISIM)
-        if (product.Price != dto.Price && product.SysmondStockId.HasValue)
-        {
-            // Önce Sysmond'daki mevcut fiyat kaydını (CurrencyId, MeasureUnitId vb. ile birlikte) alıyoruz
-            var existingSysmondPrice = await _sysmondStockService.GetStockPriceAsync(product.SysmondStockId.Value);
-            
-            if (existingSysmondPrice != null)
-            {
-                // Sadece tutarı eziyoruz
-                existingSysmondPrice.UnitPrice = dto.Price;
-                
-                // Güncel haliyle Sysmond'a PUT atıyoruz
-                await _sysmondStockService.UpdateStockPriceAsync(existingSysmondPrice);
-            }
-        }
-
-        // 3. Lokal veritabanını güncelle
-        product.Price = dto.Price;
-        product.Quantity = dto.Quantity;
-        product.IsActive = dto.IsActive;
-        product.UpdatedAt = DateTime.UtcNow;
-
+        // 2. Ürünü güncelle
+        _mapper.Map(dto, product);
         _productRepository.Update(product);
+
+        // 3. Stok Hareketi Kontrolü
+        if (newQuantity > oldQuantity)
+        {
+            // Stok Artışı -> Giriş Hareketi (Entry)
+            int diff = newQuantity - oldQuantity;
+            await _productMovementRepository.AddAsync(new ProductMovement
+            {
+                ProductId = product.Id,
+                Quantity = diff,
+                MovementType = MovementType.Entry,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+        else if (newQuantity < oldQuantity)
+        {
+            // Stok Azalışı -> Çıkış Hareketi (Exit)
+            int diff = oldQuantity - newQuantity;
+            await _productMovementRepository.AddAsync(new ProductMovement
+            {
+                ProductId = product.Id,
+                Quantity = diff,
+                MovementType = MovementType.Exit,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
         await _unitOfWork.SaveChangesAsync();
     }
 

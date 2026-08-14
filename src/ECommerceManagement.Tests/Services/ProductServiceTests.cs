@@ -20,8 +20,8 @@ public class ProductServiceTests
     private readonly Mock<IGenericRepository<Warehouse>> _mockWarehouseRepo;
     private readonly Mock<IUnitOfWork> _mockUow;
     private readonly IMapper _mapper;
-    private readonly ProductService _productService;
     private readonly Mock<ISysmondStockService> _mockSysmondStockService;
+    private readonly ProductService _productService;
 
     public ProductServiceTests()
     {
@@ -32,9 +32,7 @@ public class ProductServiceTests
         _mockUow = new Mock<IUnitOfWork>();
 
         var services = new ServiceCollection();
-        
         services.AddLogging(); 
-        
         services.AddAutoMapper(cfg => 
         {
             cfg.CreateMap<Product, ProductDto>();
@@ -64,7 +62,7 @@ public class ProductServiceTests
             new Product { Id = 1, SellerId = 5, Name = "Laptop" }
         };
         
-        _mockProductRepo.Setup(r => r.GetWhereAsync(It.IsAny<Expression<Func<Product, bool>>>()))
+        _mockProductRepo.Setup(r => r.GetWhereAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Expression<Func<Product, object>>[]>()))
                         .ReturnsAsync(products);
 
         var result = await _productService.GetProductsBySellerIdAsync(5);
@@ -81,10 +79,7 @@ public class ProductServiceTests
         await _productService.AddAsync(dto);
 
         _mockProductRepo.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Once);
-        
-        _mockMovementRepo.Verify(m => m.AddAsync(It.Is<ProductMovement>(x => 
-            x.MovementType == MovementType.Entry && x.Quantity == 10)), Times.Once);
-            
+        _mockMovementRepo.Verify(m => m.AddAsync(It.Is<ProductMovement>(x => x.MovementType == MovementType.Entry && x.Quantity == 10)), Times.Once);
         _mockUow.Verify(u => u.SaveChangesAsync(), Times.Exactly(2));
     }
 
@@ -94,15 +89,17 @@ public class ProductServiceTests
         var existingProduct = new Product { Id = 1, Name = "Mouse", Price = 500, Quantity = 20 };
         var dto = new UpdateProductDto { Id = 1, Price = 500, Quantity = 15, IsActive = true }; 
 
-        _mockProductRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existingProduct);
+        // Hem tek parametreli hem params'lı çağrıları kapsayan güvenli mock tanımı
+        _mockProductRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<Expression<Func<Product, object>>[]>()))
+                        .ReturnsAsync(existingProduct);
+        _mockProductRepo.Setup(r => r.GetByIdAsync(1))
+                        .ReturnsAsync(existingProduct);
 
-        await _productService.UpdateProductAsync(existingProduct.Id,dto);
+        await _productService.UpdateProductAsync(existingProduct.Id, dto);
 
         _mockProductRepo.Verify(r => r.Update(It.Is<Product>(p => p.Quantity == 15)), Times.Once);
-        
         _mockMovementRepo.Verify(m => m.AddAsync(It.Is<ProductMovement>(x => 
             x.MovementType == MovementType.Exit && x.Quantity == 5)), Times.Once);
-            
         _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
     }
 
@@ -112,12 +109,14 @@ public class ProductServiceTests
         var existingProduct = new Product { Id = 1, Name = "Mouse", Price = 500, Quantity = 20 };
         var dto = new UpdateProductDto { Id = 1, Price = 700, Quantity = 20, IsActive = true }; 
 
-        _mockProductRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existingProduct);
+        _mockProductRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<Expression<Func<Product, object>>[]>()))
+                        .ReturnsAsync(existingProduct);
+        _mockProductRepo.Setup(r => r.GetByIdAsync(1))
+                        .ReturnsAsync(existingProduct);
 
-        await _productService.UpdateProductAsync(existingProduct.Id,dto);
+        await _productService.UpdateProductAsync(existingProduct.Id, dto);
 
         _mockProductRepo.Verify(r => r.Update(It.IsAny<Product>()), Times.Once);
-        
         _mockMovementRepo.Verify(m => m.AddAsync(It.IsAny<ProductMovement>()), Times.Never);
     }
 }
