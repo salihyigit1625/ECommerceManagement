@@ -1,4 +1,3 @@
-using System.Xml;
 using ECommerceManagement.Domain.Constants;
 using ECommerceManagement.Application.DTOs.Catalog;
 using ECommerceManagement.Application.Interfaces;
@@ -20,7 +19,6 @@ public class SellerController : ControllerBase
         _productService = productService;
         _sellerOrderService = sellerOrderService;
     }
-
     
     [HttpGet("products")]
     public async Task<IActionResult> GetMyProducts([FromQuery] int sellerId)
@@ -57,6 +55,7 @@ public class SellerController : ControllerBase
         return Ok(orders);
     }
 
+    // TEK ADIMDA FATURA VE ONAY
     [HttpPost("/orders/invoice")]
     public async Task<IActionResult> CreateAndConfirmInvoice([FromQuery]int sellerId, [FromQuery] int orderId)
     {
@@ -64,13 +63,7 @@ public class SellerController : ControllerBase
         return Ok(invoice);
     }
 
-    [HttpPut("/invoices/confirm")]
-    public async Task<IActionResult> ConfirmInvoice([FromQuery]int sellerId, [FromQuery]int invoiceId)
-    {
-        await _sellerOrderService.CreateAndConfirmInvoiceAsync(invoiceId, sellerId);
-        return Ok(new { Message = "Fatura onaylandı. Sipariş 'Invoiced' durumuna geçti." });
-    }
-
+    // SYSMOND'A DA 30 STATÜSÜNÜ İLETEN GÜNCEL SHIP METODU
     [HttpPut("/orders/ship")]
     public async Task<IActionResult> ShipOrder([FromQuery]int sellerId, [FromQuery]int orderId)
     {
@@ -91,5 +84,4 @@ public class SellerController : ControllerBase
         var invoices = await _sellerOrderService.GetInvoicesBySellerIdAsync(sellerId);
         return Ok(invoices);
     }
-    
 }

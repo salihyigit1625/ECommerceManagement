@@ -279,6 +279,25 @@ public class SellerOrderService : ISellerOrderService
         if (order.Status != OrderStatus.Invoiced)
             throw new InvalidOperationException("Sadece faturası kesilmiş (Invoiced) siparişler kargolanabilir.");
 
+        // SYSMOND ENTEGRASYONU: Sysmond'a siparişin kargolandığını bildir
+        if (order.SysmondOrderId.HasValue)
+        {
+            try
+            {
+                await _sysmondOrderService.UpdateOrderStatusAsync(new SysmondOrderStatusUpdateDto
+                {
+                    Id = order.SysmondOrderId.Value,
+                    Status = 30, // 30 = PartiallyDelivered (Kargolandı olarak kullanıyoruz)
+                    StatusNote = "Sipariş satıcı tarafından kargoya verildi."
+                });
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Sysmond'da kargo durumu güncellenirken hata oluştu: {ex.Message}");
+            }
+        }
+
+        // LOKAL İŞLEMLER
         order.Status = OrderStatus.Shipped;
         order.UpdatedAt = DateTime.UtcNow;
 
