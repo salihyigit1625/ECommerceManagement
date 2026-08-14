@@ -11,7 +11,6 @@ public class SysmondWarehouseService : ISysmondWarehouseService
 {
     private readonly HttpClient _httpClient;
     
-    // Sysmond Sandbox Şirket ID'miz (Sabit)
     private readonly Guid _sysmondCompanyId = Guid.Parse("f9e4c15a-307a-d6e5-495a-3a22008d01a1");
 
     public SysmondWarehouseService(HttpClient httpClient)
@@ -21,7 +20,6 @@ public class SysmondWarehouseService : ISysmondWarehouseService
 
     public async Task<string> CreateWarehouseAsync(SysmondWarehouseRequest request)
     {
-        // Kod girilmediyse isimden basit bir depo kodu üretiyoruz
         string code = string.IsNullOrWhiteSpace(request.WarehouseCode) 
             ? request.Name.Replace(" ", "-").ToUpperInvariant() 
             : request.WarehouseCode;
@@ -49,10 +47,8 @@ public class SysmondWarehouseService : ISysmondWarehouseService
     
     public async Task<List<SysmondWarehouseDto>> GetWarehousesAsync()
     {
-        // Depo oluştururken kullandığımız sabit şirket ID'miz:
         Guid companyId = Guid.Parse("f9e4c15a-307a-d6e5-495a-3a22008d01a1");
 
-        // Sysmond'a şirket ID'sini query parameter olarak bildiriyoruz
         var response = await _httpClient.GetAsync($"/api/app/warehouse?companyId={companyId}");
 
         if (response.IsSuccessStatusCode)

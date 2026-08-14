@@ -65,16 +65,13 @@ public class AdminService : IAdminService
         var warehouse = _mapper.Map<Warehouse>(dto);
         warehouse.IsActive = true;
         
-        // entegrasyon
         var sysmondRequest = new SysmondWarehouseRequest
         {
-            Name = dto.Name // Kendi DTO'muzdan gelen Name değerini veriyoruz
+            Name = dto.Name
         };
 
-        // 3. Sysmond servisini çağırıp ID'yi alıyoruz
         string sysmondGuidStr = await _sysmondWarehouseService.CreateWarehouseAsync(sysmondRequest);
 
-        // 4. Gelen GUID'i kendi entity'mize (Domain nesnemize) kaydediyoruz
         if (Guid.TryParse(sysmondGuidStr, out Guid sysmondId))
         {
             warehouse.SysmondId = sysmondId;
@@ -86,20 +83,16 @@ public class AdminService : IAdminService
     
     public async Task SyncWarehousesAsync()
     {
-        // A. Sysmond tarafındaki güncel depoları çek
         var sysmondWarehouses = await _sysmondWarehouseService.GetWarehousesAsync();
 
-        // B. Kendi lokal depolarımızı çek
         var localWarehouses = await _warehouseRepository.GetAllAsync();
 
         foreach (var sysWarehouse in sysmondWarehouses)
         {
-            // Bu depo daha önce SysmondId ile lokalimize kaydedilmiş mi?
             var existingWarehouse = localWarehouses.FirstOrDefault(w => w.SysmondId == sysWarehouse.Id);
 
             if (existingWarehouse == null)
             {
-                // Lokalimizde yoksa yeni depo olarak ekle
                 var newWarehouse = new Warehouse
                 {
                     Name = sysWarehouse.Name,
@@ -110,13 +103,11 @@ public class AdminService : IAdminService
             }
             else
             {
-                // Varsa bilgilerini güncelle (Örn: İsim değişikliği vb.)
                 existingWarehouse.Name = sysWarehouse.Name;
                 _warehouseRepository.Update(existingWarehouse);
             }
         }
 
-        // Değişiklikleri veritabanına kaydet
         await _unitOfWork.SaveChangesAsync();
     }
     

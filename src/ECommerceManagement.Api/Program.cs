@@ -53,17 +53,14 @@ builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-    // 1. Hassas Noktalar (Auth / Login / Register) İçin Katı Limit (Fixed Window)
-    // 1 dakikada aynı IP'den en fazla 5 istek yapılabilir.
+
     options.AddFixedWindowLimiter("AuthPolicy", opt =>
     {
         opt.PermitLimit = 5;
         opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueLimit = 0; // Kuyruğa alma, direkt reddet
+        opt.QueueLimit = 0; 
     });
 
-    // 2. Genel API Uç Noktaları İçin Esnek Limit (Sliding Window)
-    // 1 dakikada en fazla 60 istek yapılabilir.
     options.AddSlidingWindowLimiter("GeneralPolicy", opt =>
     {
         opt.PermitLimit = 60;
@@ -154,22 +151,17 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // SYSMOND ENTEGRASYON KAYITLARI
 // ==========================================
 
-// 0. Auth servisinin token'ı hafızada tutabilmesi için MemoryCache ekleniyor
-builder.Services.AddMemoryCache(); // <-- EKLENDİ
+builder.Services.AddMemoryCache();
 
-// 1. Handler'ın ihtiyaç duyduğu Auth Servisinin Kaydı (Buna Handler TAKILMAZ!)
-builder.Services.AddHttpClient<ISysmondAuthService, SysmondAuthService>(client => // <-- EKLENDİ
+builder.Services.AddHttpClient<ISysmondAuthService, SysmondAuthService>(client => 
 {
     client.BaseAddress = new Uri(builder.Configuration["SysmondAxSettings:BaseUrl"]!);
 });
 
-// 2. Önce Handler'ı transient olarak kaydediyoruz (Her HTTP isteğinde yeni bir token kontrolü yapabilmesi için)
 builder.Services.AddTransient<SysmondAuthDelegatingHandler>();
 
-// 3. Ardından HttpClient'ı kaydedip, içine bu Handler'ı takıyoruz
 builder.Services.AddHttpClient<ISysmondWarehouseService, SysmondWarehouseService>(client =>
     {
-        // Sysmond Base URL'ini API projesindeki appsettings.json'dan çekiyoruz
         client.BaseAddress = new Uri(builder.Configuration["SysmondAxSettings:BaseUrl"]!);
     })
     .AddHttpMessageHandler<SysmondAuthDelegatingHandler>();

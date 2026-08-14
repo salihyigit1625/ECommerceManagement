@@ -4,7 +4,7 @@ using ECommerceManagement.Domain.Entities;
 using ECommerceManagement.Domain.Enums;
 using SysmondAx.Integration.Models.Dtos;
 using SysmondAx.Integration.Services.Order;
-using SysmondAx.Integration.Services.Stock; // Fiyat ID'si çekmek için gerekli
+using SysmondAx.Integration.Services.Stock; 
 
 namespace ECommerceManagement.Application.Services;
 
@@ -38,7 +38,6 @@ public class CustomerOrderService : ICustomerOrderService
 
     public async Task<IEnumerable<OrderDto>> GetMyOrdersAsync(int customerId)
     {
-        // 1. Lokal veritabanından müşterinin tüm siparişlerini çek
         var orders = await _orderRepository.GetWhereAsync(
             o => o.CustomerId == customerId,
             o => o.Customer, 
@@ -47,7 +46,6 @@ public class CustomerOrderService : ICustomerOrderService
 
         var orderList = orders.ToList();
 
-        // 2. Sysmond Entegrasyonu: Durumu "Bekliyor (Pending)" olanların Sysmond ID'lerini topla
         var pendingSysmondOrderIds = orderList
             .Where(o => o.Status == OrderStatus.Pending && o.SysmondOrderId.HasValue)
             .Select(o => o.SysmondOrderId!.Value)
@@ -55,18 +53,15 @@ public class CustomerOrderService : ICustomerOrderService
 
         if (pendingSysmondOrderIds.Any())
         {
-            // 3. Sysmond'dan bu siparişlerin güncel durumlarını çek
             var sysmondStatuses = await _sysmondOrderService.GetOrderStatusesByIdsAsync(pendingSysmondOrderIds);
 
             bool isAnyStatusChanged = false;
 
-            // BURASI DÜZELTİLDİ: o.SysmondOrderId.HasValue kontrolü eklendi
             foreach (var localOrder in orderList.Where(o => o.SysmondOrderId.HasValue && pendingSysmondOrderIds.Contains(o.SysmondOrderId.Value)))
             {
                 var sysmondOrder = sysmondStatuses.FirstOrDefault(s => s.Id == localOrder.SysmondOrderId);
                 if (sysmondOrder != null)
                 {
-                    // Sysmond Statü Dönüşümü
                     OrderStatus newStatus = localOrder.Status;
                 
                     if (sysmondOrder.Status == 20) // Approved (Onaylandı)
@@ -74,7 +69,6 @@ public class CustomerOrderService : ICustomerOrderService
                     else if (sysmondOrder.Status == -100) // Cancelled (İptal)
                         newStatus = OrderStatus.Canceled;
                 
-                    // Eğer statü değişmişse lokal DB'de güncelle
                     if (newStatus != localOrder.Status)
                     {
                         localOrder.Status = newStatus;
@@ -85,14 +79,12 @@ public class CustomerOrderService : ICustomerOrderService
                 }
             }
 
-            // Değişiklik varsa veritabanına kaydet
             if (isAnyStatusChanged)
             {
                 await _unitOfWork.SaveChangesAsync();
             }
         }
 
-        // 4. Standart DTO Mapleme İşlemleri (Mevcut kodun)
         var productIds = orderList.SelectMany(o => o.OrderItems.Select(item => item.ProductId)).Distinct().ToList();
         var products = await _productRepository.GetWhereAsync(p => productIds.Contains(p.Id));
         var productDict = products.ToDictionary(p => p.Id, p => p.Name);
@@ -114,7 +106,7 @@ public class CustomerOrderService : ICustomerOrderService
                 UnitPrice = item.UnitPrice,
                 LineTotal = item.LineTotal
             }).ToList()
-        }).OrderByDescending(o => o.CreatedAt); // En yeniler üstte görünsün
+        }).OrderByDescending(o => o.CreatedAt);
     }
     
 
@@ -156,7 +148,6 @@ public class CustomerOrderService : ICustomerOrderService
             decimal totalAmount = 0;
             var orderItems = new List<OrderItem>();
 
-            // 1. Lokal DB'de sipariş nesnesini oluştur
             var newOrder = new Order
             {
                 CustomerId = dto.CustomerId,
@@ -169,20 +160,17 @@ public class CustomerOrderService : ICustomerOrderService
             };
 
             await _orderRepository.AddAsync(newOrder);
-            await _unitOfWork.SaveChangesAsync(); // newOrder.Id oluştu
+            await _unitOfWork.SaveChangesAsync();
 
-            // 2. Sysmond Tarafında Taslak (Draft) Sipariş Oluştur
             var draftDto = new SysmondOrderDraftCreateDto
             {
-                DocNo = $"ORD-{newOrder.Id}", // Sipariş numarasını lokal ID ile eşleştirelim
+                DocNo = $"ORD-{newOrder.Id}", 
                 OrderDate = DateTime.UtcNow
             };
             var sysmondOrderId = await _sysmondOrderService.CreateDraftOrderAsync(draftDto);
             
-            // Sysmond Order ID'sini kaydediyoruz (İptal işlemi için kritik!)
             newOrder.SysmondOrderId = sysmondOrderId;
 
-            // 3. Sipariş Kalemlerini Hem Lokal Hem Sysmond'a Ekle
             foreach (var item in sellerGroup)
             {
                 var product = item.Entity;
@@ -210,17 +198,15 @@ public class CustomerOrderService : ICustomerOrderService
                     CreatedAt = DateTime.UtcNow
                 });
 
-                // Sysmond'a kalem ekle
                 if (product.SysmondStockId.HasValue)
                 {
-                    // Ürüne özel fiyat ID'sini Sysmond'dan çek (daha önce yazdığımız metodla)
                     var priceDto = await _sysmondStockService.GetStockPriceAsync(product.SysmondStockId.Value);
 
                     var orderItemDto = new SysmondOrderItemCreateDto
                     {
                         OrderId = sysmondOrderId,
                         StockId = product.SysmondStockId.Value,
-                        StockPriceId = priceDto?.Id, // Dinamik çekilen fiyat ID
+                        StockPriceId = priceDto?.Id,
                         Quantity = reqQty,
                         UnitPrice = product.Price,
                         Code = product.Sku,
@@ -246,7 +232,6 @@ public class CustomerOrderService : ICustomerOrderService
         if (order == null || order.CustomerId != customerId)
             throw new KeyNotFoundException("Sipariş bulunamadı.");
 
-        // Lokal İş Kuralı: Sadece bekleyen (taslak) siparişler iptal edilebilir
         if (order.Status != OrderStatus.Pending)
             throw new InvalidOperationException("Bu sipariş iptal edilemez (Faturası kesilmiş veya kargolanmış olabilir).");
 
@@ -262,18 +247,14 @@ public class CustomerOrderService : ICustomerOrderService
 
             try
             {
-                // Sysmond'a PUT isteği gidiyor
                 await _sysmondOrderService.UpdateOrderStatusAsync(statusUpdateDto);
             }
             catch (Exception ex)
             {
-                // Eğer Sysmond tarafında "OrderCancellationNotAllowedWithDeliveries" gibi bir hata dönerse
-                // işlemi burada kesiyoruz ki lokaldeki ürün stoklarını yanlışlıkla geri iade etmeyelim!
                 throw new Exception($"Sipariş iptali Sysmond tarafında reddedildi. Detay: {ex.Message}");
             }
         }
 
-        // 2. Sysmond tarafı başarılı olduysa, lokal işlemleri geri al ve statüyü Canceled yap
         order.Status = OrderStatus.Canceled;
         order.UpdatedAt = DateTime.UtcNow;
 
@@ -282,11 +263,9 @@ public class CustomerOrderService : ICustomerOrderService
             var product = await _productRepository.GetByIdAsync(item.ProductId);
             if (product != null)
             {
-                // Ürün stok miktarını geri artır (İade)
                 product.Quantity += item.Quantity;
                 _productRepository.Update(product);
 
-                // Stok hareket (Entry) kaydını oluştur
                 await _productMovementRepository.AddAsync(new ProductMovement
                 {
                     ProductId = product.Id,
@@ -305,21 +284,17 @@ public class CustomerOrderService : ICustomerOrderService
     
     public async Task SyncOrdersFromSysmondAsync()
     {
-        // 1. Sysmond'dan tüm sipariş başlıklarını çek (Filtresiz çekiyoruz ki silinenleri de bulabilelim)
         var sysmondOrders = await _sysmondOrderService.GetAllOrdersAsync();
 
-        // 2. Lokal verilerimizi çekiyoruz (Siparişler ve Ürünler)
         var localOrders = await _orderRepository.GetAllAsync(o => o.OrderItems);
         var localProducts = await _productRepository.GetAllAsync(); // Ürün eşleştirmesi için
 
         bool hasChanges = false;
 
-        // 3. Sysmond'dan gelen siparişleri Ekle / Güncelle
         foreach (var sysOrder in sysmondOrders)
         {
             var existingOrder = localOrders.FirstOrDefault(o => o.SysmondOrderId == sysOrder.Id);
 
-            // Sysmond Statüsünü Lokal Statüye Çevirme
             OrderStatus mappedStatus = sysOrder.Status switch
             {
                 -100 => OrderStatus.Canceled,
@@ -332,7 +307,6 @@ public class CustomerOrderService : ICustomerOrderService
 
             if (existingOrder != null)
             {
-                // MEVCUT SİPARİŞ: Sadece statü güncellemesi yap
                 if (existingOrder.Status != mappedStatus)
                 {
                     existingOrder.Status = mappedStatus;
@@ -343,26 +317,23 @@ public class CustomerOrderService : ICustomerOrderService
             }
             else
             {
-                // YENİ SİPARİŞ: Sysmond'da var, bizde yok!
                 var newOrder = new Order
                 {
                     SysmondOrderId = sysOrder.Id,
-                    CustomerId = 1,        // Sabit test müşterisi
-                    SellerId = 1,          // Sabit test satıcısı
-                    ShippingAddressId = 1, // Manuel eklenen adres
-                    BillingAddressId = 1,  // Manuel eklenen adres
+                    CustomerId = 1,       
+                    SellerId = 1,        
+                    ShippingAddressId = 1,
+                    BillingAddressId = 1, 
                     TotalAmount = sysOrder.Total,
                     Status = mappedStatus,
                     CreatedAt = sysOrder.CreatedOn,
                     OrderItems = new List<OrderItem>()
                 };
 
-                // Siparişe ait kalemleri Sysmond'dan ayrı endpoint ile çekiyoruz
                 var sysItems = await _sysmondOrderService.GetOrderItemsAsync(sysOrder.Id);
 
                 foreach (var sItem in sysItems)
                 {
-                    // Kalemdeki Sysmond StockId'yi, bizim lokal Product tablomuzdaki SysmondStockId ile eşleştir
                     var localProduct = localProducts.FirstOrDefault(p => p.SysmondStockId == sItem.StockId);
                     
                     if (localProduct != null)
@@ -383,13 +354,10 @@ public class CustomerOrderService : ICustomerOrderService
             }
         }
 
-        // 4. TEMİZLİK AŞAMASI: Sysmond'da tamamen silinenleri lokal DB'den uçur
         var sysmondOrderIds = sysmondOrders.Select(s => s.Id).ToHashSet();
 
         foreach (var localOrder in localOrders)
         {
-            // Eğer siparişin Sysmond bağlantısı varsa VE şu anki güncel Sysmond listesinde YOKSA,
-            // Sysmond arayüzünden fiziksel olarak silinmiş demektir. Biz de temizliyoruz.
             if (localOrder.SysmondOrderId.HasValue && !sysmondOrderIds.Contains(localOrder.SysmondOrderId.Value))
             {
                 _orderRepository.Delete(localOrder);
@@ -397,7 +365,6 @@ public class CustomerOrderService : ICustomerOrderService
             }
         }
 
-        // 5. Tüm değişiklikleri (Ekleme, Güncelleme, Silme) tek seferde veritabanına kaydet
         if (hasChanges)
         {
             await _unitOfWork.SaveChangesAsync();

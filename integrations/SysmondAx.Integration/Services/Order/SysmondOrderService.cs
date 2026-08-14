@@ -45,7 +45,6 @@ public class SysmondOrderService : ISysmondOrderService
         }
     }
 
-    // İptal (Cancel) için Sysmond siparişi siliniyor
     public async Task DeleteOrderAsync(Guid orderId)
     {
         var response = await _httpClient.DeleteAsync($"/api/app/order/{orderId}");
@@ -76,7 +75,6 @@ public class SysmondOrderService : ISysmondOrderService
         string companyId = "f9e4c15a-307a-d6e5-495a-3a22008d01a1"; 
         var url = $"/api/app/order-query/orders?CompanyId={companyId}&Direction=3&MaxResultCount=100";
 
-        // İstenen OrderId'leri query string'e array olarak ekliyoruz
         foreach (var id in orderIds)
         {
             url += $"&Ids={id}";

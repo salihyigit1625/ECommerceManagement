@@ -55,7 +55,6 @@ public class SellerController : ControllerBase
         return Ok(orders);
     }
 
-    // TEK ADIMDA FATURA VE ONAY
     [HttpPost("/orders/invoice")]
     public async Task<IActionResult> CreateAndConfirmInvoice([FromQuery]int sellerId, [FromQuery] int orderId)
     {
@@ -63,7 +62,6 @@ public class SellerController : ControllerBase
         return Ok(invoice);
     }
 
-    // SYSMOND'A DA 30 STATÜSÜNÜ İLETEN GÜNCEL SHIP METODU
     [HttpPut("/orders/ship")]
     public async Task<IActionResult> ShipOrder([FromQuery]int sellerId, [FromQuery]int orderId)
     {

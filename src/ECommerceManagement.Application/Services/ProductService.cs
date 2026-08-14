@@ -67,29 +67,24 @@ public class ProductService : IProductService
             VatPercent = 0
         };
 
-        // 1. Sysmond'da Stok Kartını Oluştur (Tuple olarak StockId ve StockPriceId'yi alıyoruz)
         var (sysmondStockId, sysmondStockPriceId) = await _sysmondStockService.CreateStockAsync(sysmondRequest);
 
         if (sysmondStockId != Guid.Empty)
         {
             product.SysmondStockId = sysmondStockId;
             
-            // 2. Sysmond'da Stok ile Depoyu Eşleştir
             var warehouse = await _warehouseRepository.GetByIdAsync(dto.WarehouseId); 
             
             if (warehouse != null && warehouse.SysmondId.HasValue)
             {
                 await _sysmondStockService.MapStockToWarehouseAsync(sysmondStockId, warehouse.SysmondId.Value);
 
-                // 3. AÇILIŞ STOĞU VARSA FİŞ KES, KALEM EKLE VE ONAYLA
                 if (dto.Quantity > 0)
                 {
-                    // A. Fişi oluştur
                     Guid receiptId = await _sysmondStockService.CreateStockReceiptAsync(
                         warehouse.SysmondId.Value, 
                         $"Sistemden Otomatik Açılış Stoğu - {dto.Name}");
 
-                    // B. Fişin içine ürünü, miktarı ve yakalanan StockPriceId'yi ekle
                     await _sysmondStockService.AddStockReceiptItemAsync(
                         receiptId, 
                         sysmondStockId, 
@@ -98,17 +93,14 @@ public class ProductService : IProductService
                         dto.Price,
                         sysmondStockPriceId);
 
-                    // C. Fişi kesinleştir / işle (Stok bakiyesine yansıt)
                     await _sysmondStockService.ProcessStockReceiptAsync(receiptId);
                 }
             }
         }
 
-        // 4. Kendi DB'mize Ürünü Kaydet
         await _productRepository.AddAsync(product);
         await _unitOfWork.SaveChangesAsync();
 
-        // 5. Kendi DB'mizde Stok Hareketini (ProductMovement) Kaydet
         if (product.Quantity > 0)
         {
             await _productMovementRepository.AddAsync(new ProductMovement
@@ -128,18 +120,14 @@ public class ProductService : IProductService
         if (product == null)
             throw new KeyNotFoundException("Ürün bulunamadı.");
 
-        // 1. Eski ve yeni stok miktarını mapping ÖNCESİNDE alıyoruz
         int oldQuantity = product.Quantity;
         int newQuantity = dto.Quantity;
 
-        // 2. Ürünü güncelle
         _mapper.Map(dto, product);
         _productRepository.Update(product);
 
-        // 3. Stok Hareketi Kontrolü
         if (newQuantity > oldQuantity)
         {
-            // Stok Artışı -> Giriş Hareketi (Entry)
             int diff = newQuantity - oldQuantity;
             await _productMovementRepository.AddAsync(new ProductMovement
             {
@@ -151,7 +139,6 @@ public class ProductService : IProductService
         }
         else if (newQuantity < oldQuantity)
         {
-            // Stok Azalışı -> Çıkış Hareketi (Exit)
             int diff = oldQuantity - newQuantity;
             await _productMovementRepository.AddAsync(new ProductMovement
             {
