@@ -96,7 +96,7 @@ public class ProductServiceTests
 
         _mockProductRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existingProduct);
 
-        await _productService.UpdateAsync(dto);
+        await _productService.UpdateProductAsync(existingProduct.Id,dto);
 
         _mockProductRepo.Verify(r => r.Update(It.Is<Product>(p => p.Quantity == 15)), Times.Once);
         
@@ -114,7 +114,7 @@ public class ProductServiceTests
 
         _mockProductRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existingProduct);
 
-        await _productService.UpdateAsync(dto);
+        await _productService.UpdateProductAsync(existingProduct.Id,dto);
 
         _mockProductRepo.Verify(r => r.Update(It.IsAny<Product>()), Times.Once);
         

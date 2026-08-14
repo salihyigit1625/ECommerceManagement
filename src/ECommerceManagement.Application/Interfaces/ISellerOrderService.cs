@@ -6,11 +6,11 @@ namespace ECommerceManagement.Application.Interfaces;
 public interface ISellerOrderService
 {
     Task<IEnumerable<OrderDto>> GetPendingOrdersAsync(int sellerId);
-    Task<InvoiceDto> CreateInvoiceDraftAsync(int orderId, int sellerId);
-    Task ConfirmInvoiceAndOrderAsync(int invoiceId, int sellerId);
+    Task<InvoiceDto> CreateAndConfirmInvoiceAsync(int orderId, int sellerId);
     Task ShipOrderAsync(int orderId, int sellerId);
     Task CancelOrderAsync(int orderId, int sellerId);
     
     Task<IEnumerable<OrderDto>> GetAllOrdersBySellerIdAsync(int sellerId);
     Task<IEnumerable<InvoiceDto>> GetInvoicesBySellerIdAsync(int sellerId);
+
 }

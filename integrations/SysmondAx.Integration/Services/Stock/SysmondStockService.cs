@@ -216,4 +216,177 @@ public class SysmondStockService : ISysmondStockService
 
         return allProducts;
     }
+    
+    
+    public async Task DeleteStockAsync(Guid sysmondStockId)
+    {
+        var response = await _httpClient.DeleteAsync($"/api/app/stock/{sysmondStockId}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Sysmond üzerinden stok silinemedi (ID: {sysmondStockId}). Hata: {errorContent}");
+        }
+    }
+    
+    public async Task AdjustStockQuantityAsync(Guid sysmondStockId, Guid sysmondWarehouseId, int differenceQuantity)
+    {
+        // Fark pozitifse 10 (Giriş), negatifse 20 (Çıkış)
+        int receiptType = differenceQuantity > 0 ? 10 : 20;
+        decimal absoluteQuantity = Math.Abs(differenceQuantity);
+
+        // 1. ADIM: FİŞ BAŞLIĞINI OLUŞTUR (Senin kendi DTO'nu kullanıyoruz)
+        var receiptHeaderDto = new SysmondStockReceiptCreateDto
+        {
+            Type = receiptType,
+            WarehouseId = sysmondWarehouseId
+            // CompanyPeriodId, TransactionDate vb. senin DTO'daki default değerlerinden otomatik gelecek.
+        };
+
+        var headerResponse = await _httpClient.PostAsJsonAsync("/api/app/stock-receipt/stock-receipt", receiptHeaderDto);
+        if (!headerResponse.IsSuccessStatusCode)
+        {
+            string errorContent = await headerResponse.Content.ReadAsStringAsync();
+            throw new Exception($"Stok fişi (başlık) oluşturulamadı. Detay: {errorContent}");
+        }
+
+        string headerJsonString = await headerResponse.Content.ReadAsStringAsync();
+        var headerNode = System.Text.Json.Nodes.JsonNode.Parse(headerJsonString);
+        
+        // Sysmond'dan dönen Receipt ID'yi alıyoruz
+        string? receiptIdStr = headerNode?["id"]?.ToString() ?? headerNode?["data"]?["id"]?.ToString();
+        if (string.IsNullOrEmpty(receiptIdStr) || !Guid.TryParse(receiptIdStr, out Guid receiptId))
+        {
+            throw new Exception("Sysmond'dan geçerli bir Fiş (Receipt) ID alınamadı.");
+        }
+
+        // 2. ADIM: FİYAT ID'SİNİ DİNAMİK OLARAK ÇEK (CreateStockAsync'teki mantığın aynısı)
+        Guid? stockPriceId = null;
+        var priceResponse = await _httpClient.GetAsync($"/api/app/stock-price?stockId={sysmondStockId}");
+
+        if (priceResponse.IsSuccessStatusCode)
+        {
+            string priceJsonString = await priceResponse.Content.ReadAsStringAsync();
+            var priceNode = System.Text.Json.Nodes.JsonNode.Parse(priceJsonString);
+
+            string? priceIdStr = priceNode?["data"]?[0]?["id"]?.ToString();
+
+            if (!string.IsNullOrEmpty(priceIdStr) && Guid.TryParse(priceIdStr, out var parsedPriceId))
+            {
+                stockPriceId = parsedPriceId;
+            }
+        }
+
+        // 3. ADIM: FİŞE KALEM EKLE
+        var receiptItemDto = new SysmondStockReceiptItemCreateDto()
+        {
+            StockReceiptId = receiptId,
+            StockId = sysmondStockId,
+            WarehouseId = sysmondWarehouseId,
+            Quantity = absoluteQuantity,
+            UnitPrice = 1,
+            StockPriceId = stockPriceId,
+            CurrencyExchangeRate = 1
+        };
+
+        var itemResponse = await _httpClient.PostAsJsonAsync("/api/app/stock-receipt/stock-receipt-item", receiptItemDto);
+        if (!itemResponse.IsSuccessStatusCode)
+        {
+            string errorContent = await itemResponse.Content.ReadAsStringAsync();
+            throw new Exception($"Stok fişine kalem eklenemedi. Detay: {errorContent}");
+        }
+
+        // 4. ADIM: FİŞİ ONAYLA VE STOĞA YANSIT (Process)
+        var processResponse = await _httpClient.PostAsync($"/api/app/stock-receipt/{receiptId}/process-stock-receipt", null);
+        if (!processResponse.IsSuccessStatusCode)
+        {
+            string errorContent = await processResponse.Content.ReadAsStringAsync();
+            throw new Exception($"Stok fişi onaylanamadı (Process). Detay: {errorContent}");
+        }
+    }
+    
+    public async Task<List<SysmondStockPriceUpdateDto>> GetAllStockPricesAsync()
+    {
+        var allPrices = new List<SysmondStockPriceUpdateDto>();
+        int skipCount = 0;
+        int maxResultCount = 100;
+        bool hasMore = true;
+
+        while (hasMore)
+        {
+            // CompanyId parametresi mutlaka eklenmeli
+            var url = $"/api/app/stock-price?CompanyId={_sysmondCompanyId}&SkipCount={skipCount}&MaxResultCount={maxResultCount}";
+            var response = await _httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                string errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Sysmond fiyat listesi getirilemedi. Hata: {errorContent}");
+            }
+
+            string jsonString = await response.Content.ReadAsStringAsync();
+            var jsonNode = System.Text.Json.Nodes.JsonNode.Parse(jsonString);
+
+            // Sysmond fiyatlarda 'data' veya 'items' dönebilir
+            var itemsNode = jsonNode?["data"] ?? jsonNode?["items"];
+            int totalCount = jsonNode?["totalCount"]?.GetValue<int>() ?? 0;
+
+            if (itemsNode != null)
+            {
+                var prices = itemsNode.Deserialize<List<SysmondStockPriceUpdateDto>>();
+                if (prices != null && prices.Any())
+                {
+                    allPrices.AddRange(prices);
+                    skipCount += maxResultCount;
+
+                    if (allPrices.Count >= totalCount || prices.Count < maxResultCount)
+                    {
+                        hasMore = false;
+                    }
+                }
+                else
+                {
+                    hasMore = false;
+                }
+            }
+            else
+            {
+                hasMore = false;
+            }
+        }
+
+        return allPrices;
+    }
+
+    public async Task<SysmondStockPriceUpdateDto?> GetStockPriceAsync(Guid stockId)
+    {
+        var response = await _httpClient.GetAsync($"/api/app/stock-price?stockId={stockId}");
+        if (response.IsSuccessStatusCode)
+        {
+            string jsonString = await response.Content.ReadAsStringAsync();
+            var jsonNode = System.Text.Json.Nodes.JsonNode.Parse(jsonString);
+            var itemsNode = jsonNode?["items"] ?? jsonNode?["data"];
+        
+            if (itemsNode is System.Text.Json.Nodes.JsonArray array && array.Count > 0)
+            {
+                // İlk fiyat tipini (varsayılanı) alıyoruz
+                return array[0].Deserialize<SysmondStockPriceUpdateDto>();
+            }
+        }
+        return null;
+    }
+    
+    public async Task UpdateStockPriceAsync(SysmondStockPriceUpdateDto dto)
+    {
+        var response = await _httpClient.PutAsJsonAsync("/api/app/stock-price", dto);
+        if (!response.IsSuccessStatusCode)
+        {
+            string errorContent = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Sysmond fiyat güncellemesi başarısız oldu. Detay: {errorContent}");
+        }
+    }
+    
+    
+    
+    
 }

@@ -122,49 +122,63 @@ public class ProductService : IProductService
         }
     }
 
-    public async Task UpdateAsync(UpdateProductDto dto)
+    public async Task UpdateProductAsync(int id, UpdateProductDto dto)
     {
-        var product = await _productRepository.GetByIdAsync(dto.Id);
-        if (product == null)
-            throw new KeyNotFoundException("Güncellenecek ürün bulunamadı.");
+        var product = await _productRepository.GetByIdAsync(id);
+        if (product == null) throw new KeyNotFoundException("Ürün bulunamadı.");
 
-        if (dto.Price <= 0)
-            throw new InvalidOperationException("Ürün fiyatı 0'dan büyük olmalıdır.");
+        // 1. STOK MİKTARI GÜNCELLEMESİ (Az önce yaptığımız Fiş mantığı aynen duruyor)
+        int quantityDifference = dto.Quantity - product.Quantity;
+        if (quantityDifference != 0 && product.SysmondStockId.HasValue)
+        {
+            var warehouse = await _warehouseRepository.GetByIdAsync(product.WarehouseId);
+            if (warehouse != null && warehouse.SysmondId.HasValue)
+            {
+                await _sysmondStockService.AdjustStockQuantityAsync(product.SysmondStockId.Value, warehouse.SysmondId.Value, quantityDifference);
+            }
+        }
 
-        if (dto.Quantity < 0)
-            throw new InvalidOperationException("Stok miktarı negatif olamaz.");
+        // 2. FİYAT GÜNCELLEMESİ (YENİ EKLENEN KISIM)
+        if (product.Price != dto.Price && product.SysmondStockId.HasValue)
+        {
+            // Önce Sysmond'daki mevcut fiyat kaydını (CurrencyId, MeasureUnitId vb. ile birlikte) alıyoruz
+            var existingSysmondPrice = await _sysmondStockService.GetStockPriceAsync(product.SysmondStockId.Value);
+            
+            if (existingSysmondPrice != null)
+            {
+                // Sadece tutarı eziyoruz
+                existingSysmondPrice.UnitPrice = dto.Price;
+                
+                // Güncel haliyle Sysmond'a PUT atıyoruz
+                await _sysmondStockService.UpdateStockPriceAsync(existingSysmondPrice);
+            }
+        }
 
-        int stockDifference = dto.Quantity - product.Quantity;
-
-        _mapper.Map(dto, product);
+        // 3. Lokal veritabanını güncelle
+        product.Price = dto.Price;
+        product.Quantity = dto.Quantity;
+        product.IsActive = dto.IsActive;
         product.UpdatedAt = DateTime.UtcNow;
 
         _productRepository.Update(product);
-
-        if (stockDifference != 0)
-        {
-            await _productMovementRepository.AddAsync(new ProductMovement
-            {
-                ProductId = product.Id,
-                MovementType = stockDifference > 0 ? MovementType.Entry : MovementType.Exit,
-                Quantity = Math.Abs(stockDifference),
-                CreatedAt = DateTime.UtcNow
-            });
-        }
-
         await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteProductAsync(int id)
     {
         var product = await _productRepository.GetByIdAsync(id);
         if (product == null)
-            throw new KeyNotFoundException("Silinecek ürün bulunamadı.");
+        {
+            throw new KeyNotFoundException($"ID'si {id} olan ürün bulunamadı.");
+        }
 
-        product.IsActive = false;
-        product.UpdatedAt = DateTime.UtcNow;
+        if (product.SysmondStockId.HasValue)
+        {
+            await _sysmondStockService.DeleteStockAsync(product.SysmondStockId.Value);
+        }
 
-        _productRepository.Update(product);
+        _productRepository.Delete(product);
+
         await _unitOfWork.SaveChangesAsync();
     }
 }

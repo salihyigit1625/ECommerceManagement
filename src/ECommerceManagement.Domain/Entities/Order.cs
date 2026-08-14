@@ -20,6 +20,7 @@ public class Order : BaseEntity
     public Invoice? Invoice { get; set; }
 
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public Guid? SysmondOrderId { get; set; }
 }
 
 public class OrderItem : BaseEntity
@@ -32,4 +33,5 @@ public class OrderItem : BaseEntity
 
     public Order Order { get; set; } = null!;
     public Product Product { get; set; } = null!;
+    public Guid? SysmondOrderItemId { get; set; }
 }

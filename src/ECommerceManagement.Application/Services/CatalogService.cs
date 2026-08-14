@@ -73,16 +73,24 @@ public class CatalogService : ICatalogService
     
     public async Task SyncProductsAsync()
     {
-
-        // 1. Sysmond'dan güncel ürünleri ve depo-stok ilişkilerini sayfalama ile çek
+        // 1. Sysmond'dan ürünleri ve depo-stok ilişkilerini çek
         var sysmondProducts = await _sysmondStockService.GetProductsAsync();
         var sysmondWarehouseStocks = await _sysmondWarehouseService.GetWarehouseStocksAsync();
 
-        // 2. Lokal verilerimizi çek (Ürünler ve Depolar)
+        // 2. FİYATLARI PARALEL OLARAK ÇEK (Sysmond'un zorunlu stockId kuralına uygun ve çok hızlı)
+        var priceTasks = sysmondProducts.Select(async sp =>
+        {
+            var priceDto = await _sysmondStockService.GetStockPriceAsync(sp.Id);
+            return new { StockId = sp.Id, Price = priceDto?.UnitPrice ?? 0m };
+        });
+
+        var priceResults = await Task.WhenAll(priceTasks);
+        var priceDictionary = priceResults.ToDictionary(p => p.StockId, p => p.Price);
+
+        // 3. Lokal verilerimizi çek
         var localProducts = await _productRepository.GetAllAsync();
         var localWarehouses = await _warehouseRepository.GetAllAsync();
 
-        // Sysmond'dan gelen ürün ID'lerinin bir listesini çıkarıyoruz (Hızlı arama için HashSet)
         var sysmondProductIds = sysmondProducts.Select(sp => sp.Id).ToHashSet();
 
         foreach (var sysProduct in sysmondProducts)
@@ -101,6 +109,9 @@ public class CatalogService : ICatalogService
                 }
             }
 
+            // Sözlükten ürünün fiyatını alıyoruz
+            decimal resolvedPrice = priceDictionary.TryGetValue(sysProduct.Id, out var price) ? price : 0m;
+
             if (existingProduct == null)
             {
                 // Yeni ürün ekleniyor
@@ -108,11 +119,11 @@ public class CatalogService : ICatalogService
                 {
                     Name = sysProduct.Name,
                     Sku = sysProduct.Code ?? $"SKU-{Guid.NewGuid().ToString().Substring(0, 6).ToUpper()}",
-                    Price = 0, 
+                    Price = resolvedPrice,
                     Quantity = (int)sysProduct.AmountInWarehouse,
                     IsActive = sysProduct.IsActive,
                     SysmondStockId = sysProduct.Id,
-                    CategoryId = 1,
+                    CategoryId = 4,
                     SellerId = 1,
                     WarehouseId = resolvedWarehouseId 
                 };
@@ -122,6 +133,7 @@ public class CatalogService : ICatalogService
             {
                 // Var olan ürün güncelleniyor
                 existingProduct.Name = sysProduct.Name;
+                existingProduct.Price = resolvedPrice;
                 existingProduct.Quantity = (int)sysProduct.AmountInWarehouse;
                 existingProduct.IsActive = sysProduct.IsActive;
                 existingProduct.WarehouseId = resolvedWarehouseId;
@@ -129,17 +141,17 @@ public class CatalogService : ICatalogService
             }
         }
 
-        // 3. TEMİZLİK AŞAMASI: Lokalimizde olup Sysmond'da ARTIK OLMAYAN ürünler
+        // 4. TEMİZLİK AŞAMASI: Sysmond'da silinenleri lokal DB'den temizle
         foreach (var localProduct in localProducts)
         {
-            // Eğer ürünün SysmondStockId'si varsa ve güncel Sysmond listesinde yoksa
             if (localProduct.SysmondStockId.HasValue && !sysmondProductIds.Contains(localProduct.SysmondStockId.Value))
             {
-                // Veritabanından tamamen silmek için:
-                _productRepository.Delete(localProduct); // (Repository metodunun adı Remove ise _productRepository.Remove(localProduct) yapabilirsin)
+                _productRepository.Delete(localProduct);
             }
         }
 
         await _unitOfWork.SaveChangesAsync();
     }
+    
+    
 }

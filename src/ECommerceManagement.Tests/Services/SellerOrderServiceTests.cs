@@ -1,5 +1,6 @@
 using AutoMapper;
 using ECommerceManagement.Application.DTOs.Invoices;
+using ECommerceManagement.Application.DTOs.Orders;
 using ECommerceManagement.Application.Services;
 using ECommerceManagement.Domain.Entities;
 using ECommerceManagement.Domain.Enums;
@@ -7,6 +8,10 @@ using ECommerceManagement.Application.Interfaces;
 using FluentAssertions;
 using Moq;
 using System.Linq.Expressions;
+using SysmondAx.Integration.Models.Dtos;
+using SysmondAx.Integration.Services.Invoice;
+using SysmondAx.Integration.Services.Order;
+using SysmondAx.Integration.Services.Stock;
 using Xunit;
 
 namespace ECommerceManagement.Tests.Services;
@@ -20,6 +25,9 @@ public class SellerOrderServiceTests
     private readonly Mock<IGenericRepository<ProductMovement>> _mockMovementRepo;
     private readonly Mock<IUnitOfWork> _mockUow;
     private readonly Mock<IMapper> _mockMapper;
+    private readonly Mock<ISysmondOrderService> _mockSysmondOrderService; // Sysmond mock nesnesi eklendi
+    private readonly Mock<ISysmondStockService> _mockStockService;
+    private readonly Mock<ISysmondInvoiceService>  _mockSysmondInvoiceService;
     private readonly SellerOrderService _sellerOrderService;
 
     public SellerOrderServiceTests()
@@ -31,6 +39,9 @@ public class SellerOrderServiceTests
         _mockMovementRepo = new Mock<IGenericRepository<ProductMovement>>();
         _mockUow = new Mock<IUnitOfWork>();
         _mockMapper = new Mock<IMapper>();
+        _mockSysmondOrderService = new Mock<ISysmondOrderService>(); // Örneklendi
+        _mockSysmondInvoiceService = new Mock<ISysmondInvoiceService>();
+        _mockStockService = new Mock<ISysmondStockService>();
 
         _sellerOrderService = new SellerOrderService(
             _mockOrderRepo.Object,
@@ -38,6 +49,9 @@ public class SellerOrderServiceTests
             _mockCustomerRepo.Object,
             _mockProductRepo.Object,
             _mockMovementRepo.Object,
+            _mockSysmondOrderService.Object,
+            _mockSysmondInvoiceService.Object,
+            _mockStockService.Object,
             _mockUow.Object,
             _mockMapper.Object
         );
@@ -50,7 +64,7 @@ public class SellerOrderServiceTests
         
         _mockOrderRepo.Setup(r => r.GetByIdAsync(1, It.IsAny<Expression<Func<Order, object?>>[]>())).ReturnsAsync(order);
 
-        Func<Task> act = async () => await _sellerOrderService.CreateInvoiceDraftAsync(1, 10);
+        Func<Task> act = async () => await _sellerOrderService.CreateAndConfirmInvoiceAsync(1, 10);
 
         await act.Should().ThrowAsync<KeyNotFoundException>()
             .WithMessage("Sipariş bulunamadı veya bu satıcıya ait değil.");
@@ -82,7 +96,7 @@ public class SellerOrderServiceTests
         _mockCustomerRepo.Setup(r => r.GetByIdAsync(5)).ReturnsAsync(customer);
         _mockMapper.Setup(m => m.Map<InvoiceDto>(It.IsAny<Invoice>())).Returns(new InvoiceDto());
 
-        await _sellerOrderService.CreateInvoiceDraftAsync(1, 10);
+        await _sellerOrderService.CreateAndConfirmInvoiceAsync(1, 10);
 
         _mockInvoiceRepo.Verify(r => r.AddAsync(It.Is<Invoice>(i =>
             i.OrderId == 1 &&
@@ -127,5 +141,50 @@ public class SellerOrderServiceTests
         _mockInvoiceRepo.Verify(r => r.Update(invoice), Times.Once);
 
         _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetPendingOrdersAsync_Should_Update_Status_And_Exclude_Approved_Sysmond_Orders()
+    {
+        // 1. Arrange
+        var sysmondGuid = Guid.NewGuid();
+        var orderItems = new List<OrderItem> { new OrderItem { ProductId = 1, Quantity = 1, UnitPrice = 100, LineTotal = 100 } };
+        
+        var order = new Order
+        {
+            Id = 1,
+            SellerId = 1,
+            CustomerId = 1,
+            Status = OrderStatus.Pending,
+            SysmondOrderId = sysmondGuid,
+            OrderItems = orderItems
+        };
+
+        _mockOrderRepo.Setup(r => r.GetWhereAsync(
+            It.IsAny<Expression<Func<Order, bool>>>(),
+            It.IsAny<Expression<Func<Order, object>>[]>()))
+            .ReturnsAsync(new List<Order> { order });
+
+        _mockProductRepo.Setup(r => r.GetWhereAsync(
+            It.IsAny<Expression<Func<Product, bool>>>(),
+            It.IsAny<Expression<Func<Product, object>>[]>()))
+            .ReturnsAsync(new List<Product> { new Product { Id = 1, Name = "Test Ürün" } });
+
+        // Sysmond tarafında siparişin onaylandığını (Status: 20) taklit ediyoruz
+        _mockSysmondOrderService.Setup(s => s.GetOrderStatusesByIdsAsync(It.IsAny<List<Guid>>()))
+            .ReturnsAsync(new List<SysmondOrderDto>
+            {
+                new SysmondOrderDto { Id = sysmondGuid, Status = 20 }
+            });
+
+        // 2. Act
+        var result = await _sellerOrderService.GetPendingOrdersAsync(1);
+
+        // 3. Assert
+        // Sipariş Sysmond'da onaylandığı için lokalde Invoiced olmalı ve bekleyenler listesinden çıkarılmalı
+        order.Status.Should().Be(OrderStatus.Invoiced);
+        _mockOrderRepo.Verify(r => r.Update(order), Times.Once);
+        _mockUow.Verify(u => u.SaveChangesAsync(), Times.Once);
+        result.Should().BeEmpty();
     }
 }

@@ -7,6 +7,6 @@ public interface IProductService
     Task<IEnumerable<SellerProductDto>> GetProductsBySellerIdAsync(int sellerId);
     Task<ProductDto?> GetByIdAsync(int id);
     Task AddAsync(CreateProductDto dto);
-    Task UpdateAsync(UpdateProductDto dto);
-    Task DeleteAsync(int id); // Soft-delete (IsActive = false)
+    Task UpdateProductAsync(int id, UpdateProductDto dto);
+    Task DeleteProductAsync(int id);
 }

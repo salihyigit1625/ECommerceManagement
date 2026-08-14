@@ -6,6 +6,9 @@ using ECommerceManagement.Application.Interfaces;
 using FluentAssertions;
 using Moq;
 using System.Linq.Expressions;
+using SysmondAx.Integration.Services.Order;
+using SysmondAx.Integration.Services.Stock;
+using SysmondAx.Integration.Models.Dtos; // DTO'lar için eklendi
 using Xunit;
 
 namespace ECommerceManagement.Tests.Services;
@@ -17,6 +20,11 @@ public class CustomerOrderServiceTests
     private readonly Mock<IGenericRepository<Address>> _mockAddressRepo;
     private readonly Mock<IGenericRepository<ProductMovement>> _mockProductMovementRepo;
     private readonly Mock<IUnitOfWork> _mockUow;
+    
+    // Sysmond servisleri Mock olarak tanımlandı
+    private readonly Mock<ISysmondOrderService> _mockSysmondOrderService;
+    private readonly Mock<ISysmondStockService> _mockSysmondStockService;
+    
     private readonly CustomerOrderService _orderService;
 
     public CustomerOrderServiceTests()
@@ -26,13 +34,19 @@ public class CustomerOrderServiceTests
         _mockAddressRepo = new Mock<IGenericRepository<Address>>();
         _mockProductMovementRepo = new Mock<IGenericRepository<ProductMovement>>();
         _mockUow = new Mock<IUnitOfWork>();
+        
+        // Mock nesneleri örneklendi
+        _mockSysmondOrderService = new Mock<ISysmondOrderService>();
+        _mockSysmondStockService = new Mock<ISysmondStockService>();
 
         _orderService = new CustomerOrderService(
             _mockOrderRepo.Object,
             _mockProductRepo.Object,
             _mockAddressRepo.Object,
             _mockProductMovementRepo.Object,
-            _mockUow.Object
+            _mockUow.Object,
+            _mockSysmondOrderService.Object, // Constructor'a eklendi
+            _mockSysmondStockService.Object  // Constructor'a eklendi
         );
     }
 
@@ -114,6 +128,7 @@ public class CustomerOrderServiceTests
         _mockAddressRepo.Setup(r => r.GetByIdAsync(10)).ReturnsAsync(shippingAddr);
         _mockAddressRepo.Setup(r => r.GetByIdAsync(11)).ReturnsAsync(billingAddr);
 
+        // Not: Test için SysmondStockId değeri atamıyoruz ki AddOrderItemAsync mock'una takılmasın, basic flow çalışsın.
         var product = new Product { Id = 1, SellerId = 5, Name = "Laptop", Quantity = 10, IsActive = true, Price = 1000 };
         _mockProductRepo.Setup(r => r.GetWhereAsync(It.IsAny<Expression<Func<Product, bool>>>(), It.IsAny<Expression<Func<Product, object>>[]>()))
                         .ReturnsAsync(new List<Product> { product });
@@ -128,6 +143,10 @@ public class CustomerOrderServiceTests
 
         _mockOrderRepo.Setup(r => r.AddAsync(It.IsAny<Order>()))
             .Callback<Order>(o => o.Id = 99); 
+
+        // Sysmond taslak sipariş oluşturma işleminin sahte bir GUID dönmesi sağlandı
+        _mockSysmondOrderService.Setup(s => s.CreateDraftOrderAsync(It.IsAny<SysmondOrderDraftCreateDto>()))
+                                .ReturnsAsync(Guid.NewGuid());
 
         await _orderService.CreateOrderAsync(dto);
 

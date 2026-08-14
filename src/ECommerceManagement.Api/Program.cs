@@ -21,6 +21,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using SysmondAx.Integration.Handlers;
 using SysmondAx.Integration.Models.Settings;
 using SysmondAx.Integration.Services.Auth;
+using SysmondAx.Integration.Services.Invoice;
+using SysmondAx.Integration.Services.Order;
 using SysmondAx.Integration.Services.Stock;
 using SysmondAx.Integration.Services.Warehouse;
 
@@ -176,7 +178,20 @@ builder.Services.AddHttpClient<ISysmondStockService, SysmondStockService>(client
     {
         client.BaseAddress = new Uri(builder.Configuration["SysmondAxSettings:BaseUrl"]!);
     })
+    .AddHttpMessageHandler<SysmondAuthDelegatingHandler>(); 
+
+builder.Services.AddHttpClient<ISysmondOrderService, SysmondOrderService>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["SysmondAxSettings:BaseUrl"]!);
+})
     .AddHttpMessageHandler<SysmondAuthDelegatingHandler>();
+
+builder.Services.AddHttpClient<ISysmondInvoiceService, SysmondInvoiceService>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["SysmondAxSettings:BaseUrl"]!);
+})
+    .AddHttpMessageHandler<SysmondAuthDelegatingHandler>();
+
 
 // Servis Kayıtları
 builder.Services.AddScoped<IProductService, ProductService>();

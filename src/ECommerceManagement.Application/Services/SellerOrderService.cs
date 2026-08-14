@@ -4,6 +4,10 @@ using ECommerceManagement.Application.DTOs.Orders;
 using ECommerceManagement.Application.Interfaces;
 using ECommerceManagement.Domain.Entities;
 using ECommerceManagement.Domain.Enums;
+using SysmondAx.Integration.Models.Dtos;
+using SysmondAx.Integration.Services.Invoice;
+using SysmondAx.Integration.Services.Order;
+using SysmondAx.Integration.Services.Stock;
 
 namespace ECommerceManagement.Application.Services;
 
@@ -14,6 +18,9 @@ public class SellerOrderService : ISellerOrderService
     private readonly IGenericRepository<Customer> _customerRepository;
     private readonly IGenericRepository<Product> _productRepository;
     private readonly IGenericRepository<ProductMovement> _productMovementRepository;
+    private readonly ISysmondOrderService _sysmondOrderService;
+    private readonly ISysmondInvoiceService _sysmondInvoiceService;
+    private readonly ISysmondStockService _sysmondStockService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
@@ -23,6 +30,9 @@ public class SellerOrderService : ISellerOrderService
         IGenericRepository<Customer> customerRepository,
         IGenericRepository<Product> productRepository,
         IGenericRepository<ProductMovement> productMovementRepository,
+        ISysmondOrderService sysmondOrderService,
+        ISysmondInvoiceService sysmondInvoiceService,
+        ISysmondStockService sysmondStockService,
         IUnitOfWork unitOfWork,
         IMapper mapper)
     {
@@ -31,23 +41,83 @@ public class SellerOrderService : ISellerOrderService
         _customerRepository = customerRepository;
         _productRepository = productRepository;
         _productMovementRepository = productMovementRepository;
+        _sysmondOrderService = sysmondOrderService;
+        _sysmondInvoiceService = sysmondInvoiceService;
+        _sysmondStockService = sysmondStockService;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
     }
 
     public async Task<IEnumerable<OrderDto>> GetPendingOrdersAsync(int sellerId)
     {
+        // 1. Lokal veritabanından satıcının sadece "Bekleyen (Pending)" siparişlerini çek
         var orders = await _orderRepository.GetWhereAsync(
             o => o.SellerId == sellerId && o.Status == OrderStatus.Pending,
             o => o.Customer, 
             o => o.OrderItems
         );
 
-        var productIds = orders.SelectMany(o => o.OrderItems.Select(item => item.ProductId)).Distinct().ToList();
+        var orderList = orders.ToList();
+
+        // 2. Sysmond Entegrasyonu: Sysmond ID'si olanları topla
+        var pendingSysmondOrderIds = orderList
+            .Where(o => o.SysmondOrderId.HasValue)
+            .Select(o => o.SysmondOrderId!.Value)
+            .ToList();
+
+        if (pendingSysmondOrderIds.Any())
+        {
+            // 3. Sysmond'dan bu siparişlerin güncel durumlarını çek
+            var sysmondStatuses = await _sysmondOrderService.GetOrderStatusesByIdsAsync(pendingSysmondOrderIds);
+
+            bool isAnyStatusChanged = false;
+            var ordersToRemoveFromList = new List<Order>();
+
+            foreach (var localOrder in orderList.Where(o => o.SysmondOrderId.HasValue))
+            {
+                var sysmondOrder = sysmondStatuses.FirstOrDefault(s => s.Id == localOrder.SysmondOrderId.Value);
+                if (sysmondOrder != null)
+                {
+                    // Sysmond Statü Dönüşümü
+                    OrderStatus newStatus = localOrder.Status;
+                    
+                    if (sysmondOrder.Status == 20) // Approved (Onaylandı)
+                        newStatus = OrderStatus.Invoiced; 
+                    else if (sysmondOrder.Status == -100) // Cancelled (İptal)
+                        newStatus = OrderStatus.Canceled;
+                    
+                    // Eğer statü Pending'den başka bir duruma geçmişse
+                    if (newStatus != localOrder.Status)
+                    {
+                        localOrder.Status = newStatus;
+                        localOrder.UpdatedAt = DateTime.UtcNow;
+                        _orderRepository.Update(localOrder);
+                        isAnyStatusChanged = true;
+                        
+                        // Artık 'Pending' olmadığı için bu siparişi döneceğimiz listeden çıkarmalıyız
+                        ordersToRemoveFromList.Add(localOrder);
+                    }
+                }
+            }
+
+            // Değişiklik varsa veritabanına kaydet ve güncellenenleri listeden temizle
+            if (isAnyStatusChanged)
+            {
+                await _unitOfWork.SaveChangesAsync();
+                
+                foreach (var orderToRemove in ordersToRemoveFromList)
+                {
+                    orderList.Remove(orderToRemove);
+                }
+            }
+        }
+
+        // 4. Geriye kalan (gerçekten hala Pending olan) siparişleri DTO'ya çevir
+        var productIds = orderList.SelectMany(o => o.OrderItems.Select(item => item.ProductId)).Distinct().ToList();
         var products = await _productRepository.GetWhereAsync(p => productIds.Contains(p.Id));
         var productDict = products.ToDictionary(p => p.Id, p => p.Name);
 
-        return orders.Select(o => new OrderDto
+        return orderList.Select(o => new OrderDto
         {
             Id = o.Id,
             CustomerId = o.CustomerId,
@@ -64,70 +134,140 @@ public class SellerOrderService : ISellerOrderService
                 UnitPrice = item.UnitPrice,
                 LineTotal = item.LineTotal
             }).ToList()
-        });
+        }).OrderByDescending(o => o.CreatedAt); // En yeni bekleyen siparişler en üstte görünsün
     }
 
-    public async Task<InvoiceDto> CreateInvoiceDraftAsync(int orderId, int sellerId)
+    public async Task<InvoiceDto> CreateAndConfirmInvoiceAsync(int orderId, int sellerId)
     {
+        // 1. Siparişi kalemleriyle çek
         var order = await _orderRepository.GetByIdAsync(orderId, o => o.OrderItems);
-        
         if (order == null || order.SellerId != sellerId)
             throw new KeyNotFoundException("Sipariş bulunamadı veya bu satıcıya ait değil.");
 
         if (order.Status != OrderStatus.Pending)
-            throw new InvalidOperationException("Sadece 'Pending' durumundaki siparişlere fatura kesilebilir.");
+            throw new InvalidOperationException("Yalnızca bekleyen (Pending) siparişler faturalandırılabilir.");
 
+        // 2. Müşteriyi çek
         var customer = await _customerRepository.GetByIdAsync(order.CustomerId);
         string customerFullName = customer != null ? $"{customer.FirstName} {customer.LastName}" : "Bilinmeyen Müşteri";
 
-        var invoiceItems = order.OrderItems.Select(item => new InvoiceItem
-        {
-            ProductId = item.ProductId,
-            Quantity = item.Quantity,
-            UnitPrice = item.UnitPrice,
-            TaxRate = 20m,
-            LineTotal = item.LineTotal
-        }).ToList();
-
+        // 3. Lokal Fatura Hazırlığı
         var invoice = new Invoice
         {
             OrderId = order.Id,
-            SellerId = sellerId,
+            SellerId = order.SellerId,
             CustomerName = customerFullName,
             InvoiceNumber = $"INV-{DateTime.UtcNow:yyyyMMdd}-{order.Id}",
             TotalAmount = order.TotalAmount,
-            Status = InvoiceStatus.Waiting,
-            AxIntegrationStatus = AxIntegrationStatus.Pending,
-            InvoiceItems = invoiceItems 
+            Status = InvoiceStatus.Confirmed,
+            AxIntegrationStatus = AxIntegrationStatus.Sent,
+            CreatedAt = DateTime.UtcNow,
+            InvoiceItems = new List<InvoiceItem>()
         };
 
-        await _invoiceRepository.AddAsync(invoice);
-        await _unitOfWork.SaveChangesAsync();
+        var invoiceDtoItems = new List<InvoiceItemDto>();
 
-        return _mapper.Map<InvoiceDto>(invoice);
-    }
+        // 4. SYSMOND ENTEGRASYONU 
+        if (order.SysmondOrderId.HasValue)
+        {
+            try
+            {
+                // A. Sysmond Siparişini Onayla (Status: 20)
+                await _sysmondOrderService.UpdateOrderStatusAsync(new SysmondOrderStatusUpdateDto
+                {
+                    Id = order.SysmondOrderId.Value,
+                    Status = 20, 
+                    StatusNote = "Fatura kesildi ve sipariş onaylandı."
+                });
 
-    public async Task ConfirmInvoiceAndOrderAsync(int invoiceId, int sellerId)
-    {
-        var invoice = await _invoiceRepository.GetByIdAsync(invoiceId);
-        if (invoice == null || invoice.SellerId != sellerId)
-            throw new KeyNotFoundException("Fatura bulunamadı.");
+                // B. Sysmond'da Fatura Taslağı Oluştur
+                var draftInvoiceDto = new SysmondInvoiceDraftCreateDto
+                {
+                    ActId = Guid.Parse("1d15a962-3a17-f783-f15d-3a22e2d1b4b5"), 
+                    CompanyPeriodId = Guid.Parse("e04ebee4-bdca-b9f1-ed45-3a22008d01a1"),
+                    ActAddressId = Guid.Parse("8601d689-1e44-0ad3-65a6-3a22e2d1b4f4"),
+                    CompanyAddressId = Guid.Parse("8849b16c-cb0b-e039-fe00-3a22008d01af"),
+                    CompanyContactAddressId = Guid.Parse("234d43dc-9ed8-d462-e743-3a22008d01a9"),
+                    TemplateId = Guid.Parse("bff0435b-f9f6-695d-41df-3a22008d01a9"),
+                    IssueDate = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                    OrderDocRefs = new List<SysmondInvoiceOrderDocRefDto>
+                    {
+                        new SysmondInvoiceOrderDocRefDto { OrderId = order.SysmondOrderId.Value }
+                    }
+                };
+                var sysmondInvoiceId = await _sysmondInvoiceService.CreateDraftInvoiceAsync(draftInvoiceDto);
 
-        if (invoice.Status != InvoiceStatus.Waiting)
-            throw new InvalidOperationException("Sadece taslak (Waiting) faturalar onaylanabilir.");
+                // C. Kalemleri İşle
+                foreach (var orderItem in order.OrderItems)
+                {
+                    var product = await _productRepository.GetByIdAsync(orderItem.ProductId);
+                    
+                    // Lokale Ekle
+                    invoice.InvoiceItems.Add(new InvoiceItem
+                    {
+                        ProductId = orderItem.ProductId,
+                        Quantity = orderItem.Quantity,
+                        UnitPrice = orderItem.UnitPrice,
+                        TaxRate = 20m, 
+                        LineTotal = orderItem.LineTotal
+                    });
 
-        var order = await _orderRepository.GetByIdAsync(invoice.OrderId);
-        if (order == null)
-            throw new KeyNotFoundException("Faturaya ait sipariş bulunamadı.");
+                    // Response JSON için Listeye Ekle
+                    invoiceDtoItems.Add(new InvoiceItemDto
+                    {
+                        ProductName = product?.Name ?? "Ürün",
+                        Quantity = orderItem.Quantity,
+                        UnitPrice = orderItem.UnitPrice,
+                        TaxRate = 20m,
+                        LineTotal = orderItem.LineTotal
+                    });
 
-        invoice.Status = InvoiceStatus.Confirmed;
+                    // Sysmond StockPriceId Değerini Çek (Zorunlu Alan)
+                    Guid? stockPriceId = null;
+                    if (product?.SysmondStockId.HasValue == true)
+                    {
+                        var priceDto = await _sysmondStockService.GetStockPriceAsync(product.SysmondStockId.Value);
+                        stockPriceId = priceDto?.Id;
+                    }
+                    
+                    // Fallback: Eğer servisten gelmezse örnek payload'daki geçerli ID'yi kullan
+                    stockPriceId ??= Guid.Parse("709c81f7-a2e2-94d5-ae24-3a2302bea9d5");
+
+                    // Sysmond'a Kalem Ekle
+                    await _sysmondInvoiceService.AddInvoiceItemAsync(new SysmondInvoiceItemCreateDto
+                    {
+                        InvoiceId = sysmondInvoiceId,
+                        StockId = product?.SysmondStockId,
+                        StockPriceId = stockPriceId, // <-- ZORUNLU ALAN DOLDURULDU
+                        Name = product?.Name ?? "Ürün",
+                        Code = product?.Sku ?? "123123",
+                        MeasureUnitId = Guid.Parse("ec2118e6-8154-7926-e418-3a2194605ce0"),
+                        WarehouseId = Guid.Parse("9004703d-3c8b-fd59-d77c-3a22008d032d"),
+                        Quantity = orderItem.Quantity,
+                        UnitPrice = orderItem.UnitPrice
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Sysmond'da fatura işlemi yapılırken hata oluştu: {ex.Message}");
+            }
+        }
+
+        // 5. LOKAL VERİTABANINA KAYDET
         order.Status = OrderStatus.Invoiced;
         order.UpdatedAt = DateTime.UtcNow;
 
-        _invoiceRepository.Update(invoice);
+        await _invoiceRepository.AddAsync(invoice);
         _orderRepository.Update(order);
-
         await _unitOfWork.SaveChangesAsync();
+
+        // 6. JSON Yanıtını Dön
+        var resultDto = _mapper.Map<InvoiceDto>(invoice);
+        resultDto.CustomerName = customerFullName;
+        resultDto.Items = invoiceDtoItems;
+
+        return resultDto;
     }
 
     public async Task ShipOrderAsync(int orderId, int sellerId)

@@ -12,10 +12,12 @@ namespace ECommerceManagement.Api.Controllers;
 public class CatalogController : ControllerBase
 {
     private readonly ICatalogService _catalogService;
+    private readonly ICustomerOrderService _customerOrderService;
 
-    public CatalogController(ICatalogService catalogService)
+    public CatalogController(ICatalogService catalogService,  ICustomerOrderService customerOrderService)
     {
         _catalogService = catalogService;
+        _customerOrderService = customerOrderService;
     }
 
     /// <summary>
@@ -29,7 +31,7 @@ public class CatalogController : ControllerBase
         return Ok(result);
     }
     
-    [HttpPost("sync")]
+    [HttpPost("sync-products-from-sysmond")]
     public async Task<IActionResult> SyncProducts()
     {
         try 
@@ -46,5 +48,12 @@ public class CatalogController : ControllerBase
 
             return BadRequest(new { message = "Senkronizasyon başarısız oldu.", error = errorMessage });
         }
+    }
+    
+    [HttpPost("sync-orders-from-sysmond")]
+    public async Task<IActionResult> SyncOrders()
+    {
+        await _customerOrderService.SyncOrdersFromSysmondAsync();
+        return Ok("Siparişler başarıyla senkronize edildi!");
     }
 }

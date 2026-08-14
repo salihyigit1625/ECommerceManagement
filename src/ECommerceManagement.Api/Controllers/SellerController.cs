@@ -1,3 +1,4 @@
+using System.Xml;
 using ECommerceManagement.Domain.Constants;
 using ECommerceManagement.Application.DTOs.Catalog;
 using ECommerceManagement.Application.Interfaces;
@@ -38,14 +39,14 @@ public class SellerController : ControllerBase
     [HttpPut("products")]
     public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductDto dto)
     {
-        await _productService.UpdateAsync(dto);
+        await _productService.UpdateProductAsync(dto.Id,dto);
         return Ok(new { Message = "Ürün başarıyla güncellendi." });
     }
 
     [HttpDelete("products")]
     public async Task<IActionResult> DeleteProduct([FromQuery]int id)
     {
-        await _productService.DeleteAsync(id);
+        await _productService.DeleteProductAsync(id);
         return Ok(new { Message = "Ürün başarıyla silindi (pasife çekildi)." });
     }
 
@@ -57,16 +58,16 @@ public class SellerController : ControllerBase
     }
 
     [HttpPost("/orders/invoice")]
-    public async Task<IActionResult> CreateInvoiceDraft([FromQuery]int sellerId,[FromQuery] int orderId)
+    public async Task<IActionResult> CreateAndConfirmInvoice([FromQuery]int sellerId, [FromQuery] int orderId)
     {
-        var invoice = await _sellerOrderService.CreateInvoiceDraftAsync(orderId, sellerId);
+        var invoice = await _sellerOrderService.CreateAndConfirmInvoiceAsync(orderId, sellerId);
         return Ok(invoice);
     }
 
     [HttpPut("/invoices/confirm")]
     public async Task<IActionResult> ConfirmInvoice([FromQuery]int sellerId, [FromQuery]int invoiceId)
     {
-        await _sellerOrderService.ConfirmInvoiceAndOrderAsync(invoiceId, sellerId);
+        await _sellerOrderService.CreateAndConfirmInvoiceAsync(invoiceId, sellerId);
         return Ok(new { Message = "Fatura onaylandı. Sipariş 'Invoiced' durumuna geçti." });
     }
 
