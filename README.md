@@ -6,7 +6,6 @@
 ![.NET](https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet)
 ![C#](https://img.shields.io/badge/C%23-13-239120?style=flat-square&logo=csharp)
 ![SQL Server](https://img.shields.io/badge/SQL_Server-EF_Core_10-CC2927?style=flat-square&logo=microsoftsqlserver)
-![Tests](https://img.shields.io/badge/tests-19%20passed-brightgreen?style=flat-square)
 
 ---
 
