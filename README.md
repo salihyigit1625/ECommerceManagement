@@ -42,17 +42,16 @@ Dış entegrasyon kodunun ayrı bir katmanda (`SysmondAx.Integration`) izole edi
 Sistem, tek katmanlı bir rol kontrolünden çok daha ayrıntılı bir yetkilendirme modeli kullanır:
 
 - **Policy-Based Dynamic Authorization (RBAC + PBAC):** Rol bazlı izinlerin üzerine, kullanıcıya özel izinler tanımlanabilir ve gerektiğinde rol yetkilerini **override** edebilir. Bu, "aynı rolde ama farklı yetkilerde kullanıcı" senaryolarını veritabanı şeması değiştirmeden çözer.
-- **SuperAdmin Fast-Path:** `PermissionAuthorizationHandler`, SuperAdmin isteklerini veritabanı veya cache sorgusuna hiç gitmeden doğrudan onaylayarak gereksiz gecikmeyi ortadan kaldırır.
 - **JWT Bearer Authentication:** Kimlik doğrulama tamamen token tabanlıdır; stateless ve ölçeklenebilir bir yapı sunar.
 - **Distributed Permission Caching:** İzin kontrolleri her istekte veritabanına gitmek yerine Redis / `IDistributedCache` üzerinden yapılır. Bir kullanıcının yetkileri güncellendiğinde ilgili cache girdisi otomatik olarak **invalidate** edilir — yani stale (bayat) yetki verisiyle çalışma riski yoktur.
 - **Rate Limiting:** ASP.NET Core'un yerleşik rate limiting altyapısı ile (Fixed/Sliding Window) API kötüye kullanıma karşı korunur.
 - **Audit Logging:** Stok üzerindeki her hareket (satış, iade, kargo, manuel düzeltme) `ProductMovement` tablosuna `Entry`/`Exit` tipiyle loglanır — bu sayede "stok neden değişti" sorusu her zaman geriye dönük olarak cevaplanabilir.
-
+  
 ---
 
 ## ⚡ Sysmond AX ERP & e-Fatura Entegrasyonu
 
-Bu proje asıl karmaşıklığını, yerel sistem ile dış ERP'nin **iki ayrı kaynak-of-truth** olarak senkron kalması gereken senaryolarda gösteriyor:
+Bu proje asıl karmaşıklığını, yerel sistem ile dış ERP'nin **iki ayrı source-of-truth** olarak senkron kalması gereken senaryolarda gösteriyor:
 
 ```text
 [ E-Commerce API ]  ──── HTTP Client ────  [ Sysmond AX ERP ]
